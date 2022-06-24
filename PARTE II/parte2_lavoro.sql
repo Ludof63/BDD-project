@@ -1,4 +1,7 @@
+set search_path to socialMarket;
+
 --B VISTA
+-- Come ultimo mese intendiamo maggio nei nostri test
 
 /*TEST VISTA
 DROP VIEW riassuntoNucleoFamiliare
@@ -43,19 +46,26 @@ ON Q2.famiglia = Q3.famiglia;
 --C.A:
 SELECT codCli
 FROM  Carta_Cliente NATURAL JOIN Autorizza
+WHERE codCli NOT IN(
+    SELECT codCli
+    FROM Prodotto NATURAL JOIN INVENTARIO NATURAL JOIN Appuntamento
+    WHERE Appuntamento.dataOra BETWEEN '2022-05-01' and '2022-05-30'
+);
 
-EXCEPT
-
-SELECT codCli
-FROM  Carta_Cliente NATURAL JOIN Autorizza JOIN
-(Prodotto  NATURAL JOIN INVENTARIO  JOIN Appuntamento ON Appuntamento.dataOra = Prodotto.dataOra and (Appuntamento.dataOra BETWEEN '2022-05-01' and '2022-05-30')) 
-    ON Carta_cliente.codCli = Appuntamento.codCli
-
-
-
-
+--C.B:
+SELECT tipo
+FROM Prodotto NATURAL JOIN INVENTARIO NATURAL JOIN Appuntamento
+WHERE Appuntamento.dataOra >(current_date - INTERVAL '12 months')
+GROUP BY(tipo) 
+HAVING COUNT(DISTINCT codCli) =
+                    (SELECT COUNT(*)
+                     FROM Carta_Cliente);
 
 
+SELECT tipo, COUNT(DISTINCT codCli)
+FROM Prodotto NATURAL JOIN INVENTARIO NATURAL JOIN Appuntamento
+WHERE Appuntamento.dataOra >(current_date - INTERVAL '12 months')
+GROUP BY(tipo) 
 
 
 
