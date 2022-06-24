@@ -184,8 +184,6 @@ CHECK (
     ((dataOra is null) and (dataScarico is null))
 ));
 
-INSERT INTO prodotto  VALUES (1000, '2022-05-05', NULL , 4, NULL , 14);
-
 
 
 

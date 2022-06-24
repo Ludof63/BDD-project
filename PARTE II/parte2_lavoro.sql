@@ -1,10 +1,9 @@
 --B VISTA
 
-
+/*TEST VISTA
 DROP VIEW riassuntoNucleoFamiliare
 SELECT * FROM riassuntoNucleoFamiliare
-
-
+*/
 
 CREATE OR REPLACE VIEW riassuntoNucleoFamiliare (Famiglia, PuntiMensili, PuntiResidui, Autorizzati, Minori16, NumeroSpese,PuntiNonUtilizzati, PercReperibili,PercPerReperibili)  AS
 SELECT Q1.famiglia,Q1.PuntiMensili, Q1.puntiResidui, Q1.autorizzati , Q1.età_16, 
@@ -40,6 +39,24 @@ as Q3
 ON Q2.famiglia = Q3.famiglia;
 
 --C QUERY
+
+--C.A:
+SELECT codCli
+FROM  Carta_Cliente NATURAL JOIN Autorizza
+
+EXCEPT
+
+SELECT codCli
+FROM  Carta_Cliente NATURAL JOIN Autorizza JOIN
+(Prodotto  NATURAL JOIN INVENTARIO  JOIN Appuntamento ON Appuntamento.dataOra = Prodotto.dataOra and (Appuntamento.dataOra BETWEEN '2022-05-01' and '2022-05-30')) 
+    ON Carta_cliente.codCli = Appuntamento.codCli
+
+
+
+
+
+
+
 
 
 --D FUNZIONI
