@@ -330,3 +330,4 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 
 ### Verifica qualità dello schema (f)
 
+codProdotto -> tipo
