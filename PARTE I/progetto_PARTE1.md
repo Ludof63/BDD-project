@@ -34,7 +34,7 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 
 ### Diagramma ER (a)
 
-![](/home/ludof/Documents/UNI/Secondo/BDD/PROGETTO/PARTE I/socialMarket.svg)
+![Social Market ER](socialMarket.svg)
 
 ### Documentazione relativa ai domini degli attributi  (b)
 
@@ -253,7 +253,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit√
 
 ### Schema ER ristrutturato (a)
 
-![](/home/ludof/Documents/UNI/Secondo/BDD/PROGETTO/PARTE I/socialMarket_res.svg)
+![Social Market Ristrutturato ER](socialMarket_res.svg)
 
 #### **Modifiche ristrutturazione (b)**
 
@@ -326,7 +326,7 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 
 ### Schema logico (e)
 
-![](/home/ludof/Documents/UNI/Secondo/BDD/PROGETTO/PARTE I/schema_logico.png)
+![Schema Logico Social Market](schema_logico.png)
 
 ### Verifica qualit√† dello schema (f)
 

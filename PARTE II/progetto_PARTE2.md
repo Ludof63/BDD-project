@@ -41,4 +41,4 @@
 
 ## Diagramma (5)
 
-![](/home/ludof/Documents/UNI/Secondo/BDD/PROGETTO/PARTE II/socialmarket.svg)
+![Diagramma BD Social Market](socialmarket.svg)
