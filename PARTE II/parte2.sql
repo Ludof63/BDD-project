@@ -1,190 +1,260 @@
-/*
-PROGETTO: social market 
-PARTE II
-
-Capiaghi Ludovico, Elia Federico, Savchuk Iryna
-Basi di Dati, team 4
-Informatica - Unige anno 21/22
-*/
-
--- Inizializzazione
-create schema socialMarket;
 set search_path to socialMarket;
 
---A : CREAZIONE SCHEMA
+--B VISTA
+-- Come ultimo mese intendiamo maggio nei nostri test
 
---ENTE
-CREATE TABLE Ente(
-codEnte int PRIMARY KEY,
-nome varchar(40) NOT NULL,
-indirizzo varchar(70) NOT NULL
+/*TEST VISTA
+DROP VIEW riassuntoNucleoFamiliare
+SELECT * FROM riassuntoNucleoFamiliare
+*/
+
+CREATE OR REPLACE VIEW riassuntoNucleoFamiliare (Famiglia, PuntiMensili, PuntiResidui, Autorizzati, Minori16, NumeroSpese,PuntiNonUtilizzati, PercReperibili,PercPerReperibili)  AS
+SELECT Q1.famiglia,Q1.PuntiMensili, Q1.puntiResidui, Q1.autorizzati , Q1.età_16, 
+Q2.numeroSpese, Q2.puntiNonUtilizzati, ((Q3.puntiPerReperibili* 100)/Q2.PuntiUtilizzati), (100 - ((Q3.puntiPerReperibili* 100)/Q2.PuntiUtilizzati))
+FROM(
+    SELECT Carta_Cliente.codCli as famiglia,PuntiMensili, PuntiMensili - COALESCE (SUM(costoPunti),0) as puntiResidui, età_16_64 + età_64 as Autorizzati , età_16
+    FROM  Carta_Cliente NATURAL JOIN Autorizza LEFT JOIN
+    (Prodotto  NATURAL JOIN INVENTARIO  JOIN Appuntamento ON Appuntamento.dataOra = Prodotto.dataOra and (Appuntamento.dataOra BETWEEN '2022-05-01' and '2022-05-30')) 
+    ON Carta_cliente.codCli = Appuntamento.codCli
+    GROUP BY(Carta_Cliente.codCli,PuntiMensili, età_64 , età_16, età_16_64)
+)
+as Q1 JOIN
+(
+    SELECT Carta_Cliente.codCli as famiglia, count(distinct Appuntamento.dataOra) as numeroSpese ,
+    (12* PuntiMensili) - COALESCE (SUM(costoPunti),0) as PuntiNonUtilizzati, COALESCE (SUM(costoPunti),0) as PuntiUtilizzati
+    FROM  Carta_Cliente NATURAL JOIN Autorizza LEFT JOIN
+    (Prodotto  NATURAL JOIN INVENTARIO  JOIN Appuntamento ON Appuntamento.dataOra = Prodotto.dataOra and (Appuntamento.dataOra >(current_date - INTERVAL '12 months'))) 
+    ON Carta_cliente.codCli = Appuntamento.codCli
+    GROUP BY(Carta_Cliente.codCli,PuntiMensili)
+)
+as Q2
+ON Q1.famiglia = Q2.famiglia
+JOIN
+(
+    SELECT Carta_Cliente.codCli as famiglia, SUM(costoPunti) as puntiPerReperibili
+    FROM  Carta_Cliente NATURAL JOIN Autorizza LEFT JOIN
+    (Prodotto  NATURAL JOIN INVENTARIO  JOIN Appuntamento ON Appuntamento.dataOra = Prodotto.dataOra and (Appuntamento.dataOra >(current_date - INTERVAL '12 months'))) 
+    ON Carta_cliente.codCli = Appuntamento.codCli
+    WHERE Scadenza is not null
+    GROUP BY(Carta_Cliente.codCli,PuntiMensili)
+)
+as Q3
+ON Q2.famiglia = Q3.famiglia;
+
+--C QUERY
+
+--C.A:
+SELECT codCli
+FROM  Carta_Cliente NATURAL JOIN Autorizza
+WHERE codCli NOT IN(
+    SELECT codCli
+    FROM Prodotto NATURAL JOIN INVENTARIO NATURAL JOIN Appuntamento
+    WHERE Appuntamento.dataOra BETWEEN '2022-05-01' and '2022-05-30'
 );
 
---CARTA_CLIENTE
-CREATE TABLE Carta_Cliente(
-codCli int PRIMARY KEY,
-cf char(17) NOT NULL,
-saldo int NOT NULL CHECK(saldo >= 0),
-età_16 int NOT NULL CHECK(saldo >= 0),
-età_16_64 int NOT NULL CHECK(saldo >= 0),
-età_64 int NOT NULL CHECK(saldo >= 0),
-UNIQUE(CF)
-);
+--C.B:
+SELECT tipo
+FROM Prodotto NATURAL JOIN Inventario NATURAL JOIN Appuntamento
+WHERE Appuntamento.dataOra >(current_date - INTERVAL '12 months')
+GROUP BY(tipo) 
+HAVING COUNT(DISTINCT codCli) =
+                    (SELECT COUNT(*)
+                     FROM Carta_Cliente);
 
 
-CREATE TYPE sex as ENUM('M','F','Others');
+--C.C:
+SELECT codProdotto
+FROM Prodotto NATURAL JOIN Scarico NATURAL JOIN INVENTARIO I
+GROUP BY(codProdotto,tipo)
+HAVING COUNT(codUnità) >
+            (SELECT COUNT(codUnità)/COUNT(DISTINCT codProdotto)
+            FROM Prodotto NATURAL JOIN Scarico NATURAL JOIN INVENTARIO
+            WHERE tipo = I.tipo);
+            
+--D FUNZIONI
 
--- VOLONTARIO
-CREATE TABLE Volontario(
-cf char(17) PRIMARY KEY,
-nome varchar(20) NOT NULL,
-cognome varchar(20) NOT NULL,
-dataNascita date NOT NULL,
-luogoNascita varchar(40) NOT NULL,
-telefono varchar(20) NOT NULL,
-sesso sex NOT NULL,
-tipiVeicolo varchar(20),
-tipiServizio varchar(40),
-disponibilità varchar(50)
-);
+--D.A:
+CREATE OR REPLACE PROCEDURE doScarico() AS
+$$
+BEGIN
+    PERFORM(
+    SELECT *
+    FROM Scarico
+    WHERE dataScarico = current_date);
+    
+    IF(found)
+    THEN
+        RAISE EXCEPTION 'Oggi è già presente uno scarico';    
+    END IF;
 
--- RICEZIONE
-CREATE TABLE Ricezione(
-codRiceve int PRIMARY KEY,
-riceveInzio timestamp NOT NULL,
-riceveFine timestamp NOT NULL,
-CHECK(riceveInzio <= riceveFine)
-);
+	INSERT INTO Scarico VALUES (current_date);
+    
+    UPDATE Prodotto
+    SET dataScarico = current_date
+    FROM Inventario
+    WHERE Prodotto.codProdotto = Inventario.codProdotto  and
+    scadenza is not null  and dataOra is null and dataScarico is null 
+    and (scadenzaAggiuntiva is null or  scadenza + interval '1 month' * scadenzaAggiuntiva < current_date) ;  
+END;
+$$ LANGUAGE plpgsql;
+
+CALL doScarico();
 
 
--- INVENTARIO
-CREATE TABLE Inventario(
-codProdotto int PRIMARY KEY,
-quantità integer NOT NULL,
-tipo varchar(20) NOT NULL,
-nomeProdotto varchar(20) NOT NULL,
-costoPunti integer NOT NULL,
-scadenzaAggiuntiva integer    
-);
 
--- SCARICO
-CREATE TABLE Scarico(
-dataScarico date PRIMARY KEY
-);
+--D.B:
+CREATE OR REPLACE FUNCTION test(volontarioCF CHAR (17), startDate DATE, endDate DATE ) 
+RETURNS void
+AS
+$$ 
+BEGIN
+    PERFORM(
+    SELECT CF
+    FROM Volontario
+    WHERE CF = volontarioCF);
+    
+    IF(not found)
+    THEN
+        RAISE EXCEPTION 'Il volontario inserito non è presente';     
+    END IF;
+    
+END; 
+$$ LANGUAGE plpgsql;
 
--- DONATORE
-CREATE TABLE Donatore(
-cf char(17) PRIMARY KEY,
-telefono varchar(20) NOT NULL,
-nome varchar(40) NOT NULL,
-cognome varchar(20)
-);
 
---SPESA
-CREATE TABLE Spesa(
-codSpesa int PRIMARY KEY,
-importo decimal(8,2) NOT NULL
-);
-
--- COLLEGATO
-CREATE TABLE Collegato(
-codEnte int REFERENCES Ente (codEnte) ON UPDATE CASCADE,
-cf char(17) REFERENCES Volontario (CF) ON UPDATE CASCADE,
-PRIMARY KEY(codEnte,CF)
-);
-
--- AUTORIZZA
-CREATE TABLE Autorizza(
-codEnte int REFERENCES Ente (codEnte) ON UPDATE CASCADE,
-codCli int  REFERENCES Carta_Cliente (codCli) ON UPDATE CASCADE,
-puntiMensili integer NOT NULL,
-dataInizio date NOT NULL,
-PRIMARY KEY(codEnte,codCli),
-CHECK(puntiMensili >= 30 and puntiMensili <= 60)
-);
-
--- FAMILIARE
-CREATE TABLE Familiare(
-cf char(17) PRIMARY KEY,
-nome varchar(20) NOT NULL,
-cognome varchar(20) NOT NULL,
-dataNascita date NOT NULL,
-luogoNascita varchar(40) NOT NULL,
-telefono varchar(20) NOT NULL,
-sesso sex NOT NULL,
-codCli int REFERENCES Carta_Cliente (codCli) ON UPDATE CASCADE NOT NULL
-);
-
--- APPUNTAMENTO
-CREATE TABLE Appuntamento(
-dataOra timestamp PRIMARY KEY,
-saldoInzio integer NOT NULL,
-saldoFine integer NOT NULL,
-cf char(17) REFERENCES Familiare (CF) ON UPDATE CASCADE NOT NULL,
-codCli int REFERENCES Carta_Cliente (codCli) ON UPDATE CASCADE NOT NULL,
-CHECK(saldoFine <= saldoInzio)
-);
-
---TRASPORTO
-CREATE TABLE Trasporto(
-codTrasporto int PRIMARY KEY,
-trasportoInzio timestamp NOT NULL,
-trasportoFine timestamp NOT NULL,
-nCasse int NOT NULL,
-sedeRitiro varchar(50) NOT NULL,
-codRiceve int REFERENCES Ricezione (codRiceve) ON UPDATE CASCADE NOT NULL,
-CHECK(trasportoInzio <= trasportoFine)
-);
-
--- TURNO
-CREATE TABLE Turno(
-turnoInizio timestamp,
-cf char(17) REFERENCES Volontario (CF) ON UPDATE CASCADE,
-turnoFine timestamp NOT NULL,
-dataOra timestamp REFERENCES Appuntamento (dataOra) ON UPDATE CASCADE,
-codTrasporto int REFERENCES Trasporto (codTrasporto) ON UPDATE CASCADE,
-codRiceve int REFERENCES Ricezione (codRiceve) ON UPDATE CASCADE,
-PRIMARY KEY(turnoInizio, CF),
-CHECK(turnoInizio <= turnoFine)
-);
-
--- DONAZIONE
-CREATE TABLE Donazione(
-codDonazione int PRIMARY KEY,   
-dataOra timestamp NOT NULL,
-importo decimal(8,2),
-codTrasporto int REFERENCES Trasporto (codTrasporto),
-cf char(17) REFERENCES Donatore (CF) ON UPDATE CASCADE,  
-codSpesa int REFERENCES Spesa (codSpesa) ON UPDATE CASCADE,
-CHECK (
-    ((cf is null) and (codSpesa is not null))
-    OR
-    ((cf is not null) and (codSpesa is null))
-),
-CHECK(
-    (importo is null)
-    OR
-    ((importo is not null) and (codTrasporto is null))
-) 
-);
-
--- PRODOTTO
-CREATE TABLE Prodotto(
-codUnità int PRIMARY KEY,   
-scadenza date,
-dataOra timestamp REFERENCES Appuntamento (dataOra) ON UPDATE CASCADE,
-codProdotto int REFERENCES Inventario (codProdotto) ON UPDATE CASCADE NOT NULL,
-dataScarico date REFERENCES Scarico (dataScarico) ON UPDATE CASCADE,
-codDonazione int REFERENCES Donazione (codDonazione) ON UPDATE CASCADE NOT NULL,
-CHECK (
-    ((dataOra is null) and (dataScarico is not null))
-    OR
-    ((dataOra is not null) and (dataScarico is null))
-    OR 
-    ((dataOra is null) and (dataScarico is null))
-));
+SELECT test('YLYBSG62L6KD442W', '2022-01-15', '2022-06-15')
 
 
 
 
+
+
+
+
+DROP FUNCTION turniInData
+CREATE OR REPLACE FUNCTION turniInData(volontarioCF CHAR (17), startDate DATE, endDate DATE ) 
+RETURNS TABLE (inizioDelTurno timeStamp , fineDelTurno timeStamp)
+AS
+$$ 
+BEGIN
+    PERFORM(
+    SELECT CF
+    FROM Volontario
+    WHERE CF = volontarioCF);
+    
+    IF(not found)
+    THEN
+        RAISE EXCEPTION 'Il volontario inserito non è presente';     
+    END IF;
+
+    RETURN QUERY(
+    SELECT turnoInizio,turnoFine
+    FROM turno 
+    WHERE (turnoInizio BETWEEN startDate and endDate)
+    and   (turnoFine BETWEEN startDate and endDate)
+    and volontarioCF = CF); 
+END; 
+$$ LANGUAGE plpgsql;
+
+SELECT turniInData('YLYBSG62L6KD442W', '2022-01-15', '2022-06-15')
+
+--E TRIGGER
+--E.A:
+/*
+In caso di INSERT dobbiamo solo verificare che il volntario per cui stiamo inserendo un nuovo turno 
+non abbia turni con orari che si sovrappongo
+
+*/
+
+
+
+CREATE OR REPLACE FUNCTION checkTurniFun() RETURNS trigger AS 
+$$ 
+BEGIN 
+ IF(
+     ( SELECT Count(*) 
+        FROM turno 
+        WHERE CF = NEW.CF
+        and (New.turnoInizio,NEW.turnoFine) OVERLAPS (turnoInizio and turnoFine)) > 0
+    )
+    NEW.turnoFine) BETWEEN turnoInizio and turnoFine
+ THEN 
+   RAISE EXCEPTION 'Questo volontario ha gia un turno assegnato in un orario sovrapposto'; 
+ ELSE 
+   RETURN NEW; 
+  END IF;
+END; 
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER checkTurni 
+BEFORE INSERT ON turno 
+FOR EACH ROW 
+EXECUTE FUNCTION checkTurniFun(); 
+
+
+
+
+
+
+
+
+
+
+
+--E.B :
+--abbiamo già usato questo trigger nello script di inizializzione per mantenere quantità prodotti in inventario valida
+CREATE OR REPLACE FUNCTION funIncr() RETURNS trigger AS
+$$
+BEGIN
+	UPDATE Inventario
+	SET quantità = quantità+1
+	WHERE codProdotto = NEW.codProdotto;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER incrQnt
+AFTER INSERT ON Prodotto
+FOR EACH ROW
+EXECUTE FUNCTION funIncr();
+
+
+CREATE OR REPLACE FUNCTION funDecr() RETURNS trigger AS
+$$
+BEGIN
+	UPDATE Inventario
+	SET quantità = quantità-1
+	WHERE codProdotto = OLD.codProdotto;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER decrQnt
+AFTER DELETE ON Prodotto
+FOR EACH ROW
+EXECUTE FUNCTION funDecr();
+
+
+CREATE OR REPLACE FUNCTION funUpdateQnt() RETURNS trigger AS
+$$
+BEGIN
+    IF(NEW.codProdotto <> OLD.codProdotto)
+    THEN
+        UPDATE Inventario
+	    SET quantità = quantità-1
+	    WHERE codProdotto = OLD.codProdotto;
+        
+        UPDATE Inventario
+        SET quantità = quantità+1
+        WHERE codProdotto = NEW.codProdotto;
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE TRIGGER updateQnt
+AFTER UPDATE ON Prodotto
+FOR EACH ROW
+EXECUTE FUNCTION funUpdateQnt();
 

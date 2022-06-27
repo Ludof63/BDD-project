@@ -18,7 +18,7 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 
 - Per i punti dei clienti, abbiamo usato numeri interi
 - Memorizziamo gli enti che forniscono le autorizzazioni ( Servizi Sociali, Centri di Ascolto...) insieme agli enti che forniscono i volontari poiché riteniamo molti possano essere in comune, inoltre interpretiamo che un volontario possa essere associato a più enti
-- Memorizziamo l'autorizzazione corrente e supponiamo che i punti mensili siano un'invariante legata all'autorizzazione, ogni mese il saldo della carta_cliente viene resettato ai punti mensili
+- ***Memorizziamo solo  l'autorizzazione corrente*** (per i clienti attivi quindi) e ***supponiamo che i punti mensili siano un'invariante  nel tempo per un cliente*** ,ogni mese il saldo della carta_cliente viene resettato ai punti mensili
 - Memorizziamo i clienti come l'entità *CARTA_CLIENTE* a cui associamo poi tutti i familiari relativi, in *CARTA_CLIENTE* per riferirci al titolare di essa ( e relativi dati anagrafici) salviamo il *CF* del titolare. La carta cliente ha una durata per il periodo di 6 mesi da autorizza poi se si vuole rinnovare deve avere una nuova autorizzazione)
 - Memorizziamo tutti i familiari per una carta_cliente ovvero tutti i familiari indipendemetemente dall'età del nulceo familiare
 - La donazione può essere o in denaro o in merci
@@ -27,14 +27,14 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 - Abbiamo interpretato la ricezione di un gruppo di prodotti , attraverso la ricezione di uno o più traposrti (contiene una o più merci (gruppi di prodotti)) come il lavoro svolto da uno o più volontari per organizzare i prodotti nel magazzino, un trasporto deve essere ricevuto in una certa data-ora
 - Per la data aggiuntiva di scadenza per i prodotti che deperibili che la memorizzano la intendiamo in numero di mesi aggiuntivi alla scadenza
 - Lo scarico dei prodotti può avvenire una volta per giorno, quindi data identifica lo scarico
-- Memorizziamo i turni dei dipendenti in slot di tempo collegati a uno specifico volontario il lavoro che svolge lo deduciamo poi dalle diverse associazioni con i diversi lavori (trasporta - riceve - supervisiona)
+- Memorizziamo i turni dei dipendenti in slot di tempo collegati a uno specifico volontario il lavoro che svolge lo deduciamo poi dalle diverse associazioni con i diversi lavori (trasporta - riceve - supervisiona), ***un volontario non può avere turni che si sovrappongono*** in termini intervalli di tempo, e ***un volontario può svolgere in un turno al massimo un'attività per ogni tipo di attività*** (quindi massimo tre attività (diverse))
 - Intendiamo il trasporto come un trasporto di una o più merci (donazioni diverse) mentre la ricezione è un lavoro che fanno più volontari su un trasporto
 
 ## Progetto concettuale (2)
 
 ### Diagramma ER (a)
 
-![Social Market ER](socialMarket.svg)
+![Social Market ER](.socialMarket.svg)
 
 ### Documentazione relativa ai domini degli attributi  (b)
 
@@ -42,7 +42,10 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 
 - **ENTE** è un ente che fornisce autorizzazione e/o fornisce volontari. Un autorizzazione ha una durata di 6 mesi ed è caratterizzata da un numero di punti mensili e una data di inizio
 - **FAMILIARE** è una persona del nucleo familiare relativo ad una carta_cliente.
-- **CARTA_CLIENTE** rappresenta il "cliente" inteso come la carta relativa ad un cliente e quindi in relazione nel_nucleo per una o più familiari intese come "gruppo familiare". CF in essa rappresenta il codice fiscale del titolare, di cui i dati anagrafici sono ricavabili dal familiare con quel CF. In fasce d'età si memorizzano il numero di familiari per ogni fascia d'età per ottimizzare non dovendo ricercare su tutti i familiari di un nucleo  le età.
+- **CARTA_CLIENTE** rappresenta il "cliente" inteso come la carta relativa ad un cliente e quindi in relazione nel_nucleo per una o più familiari intese come "gruppo familiare". 
+  - *Titolare* in essa rappresenta il codice fiscale del titolare, di cui i dati anagrafici sono ricavabili dal familiare con quel CF, per lo sviluppo dello schema ER abbiamo ritenuto di non rappresentare al fine di mantenere una maggiore leggibilità nello schema un'ulteriore associazione tra le due entità, quello che poi verrà implementato ovvero titolare come chiave esterna su familiare. 
+  - In fasce d'età si memorizzano il numero di familiari per ogni fascia d'età per ottimizzare non dovendo ricercare su tutti i familiari di un nucleo  le età.
+
 - **VOLONTARIO** rappresenta il volontario del market 
 - **TURNO** è uno slot di tempo di 2 ore identificato da data e ora e da un volontario, in cui il volontario può fare delle attività che consisotno nel partcipare alle relazioni supervisione - trasporta - riceve (riceve un trasporto ad un orario che può essere diverso da quello indicato in trasporto)
 - **APPUNTAMENTO** rappresenta un appuntamento preso da un familiare e riferito ad una carta_cliente (la stessa in relazione con il familiare che ha preso l'appuntamento) in una certa data e ora, intendiamo rappresentare l'inizio dell'appuntamento. Gli appuntamenti devono essere scaglionati di 20 minuti (15 durata di appuntamento + 5 minuti tra due appuntamenti) quindi utilizziamo come chiave {data,ora} poiché risultano diverse per appuntamenti diversi
@@ -67,7 +70,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 **CARTA_CLIENTE:**
 
-- CF
+- titolare
 
 #### Domini attributi
 
@@ -84,14 +87,14 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | Attributo    | Dominio      |
 | :----------- | ------------ |
 | puntiMensili | int  [30,60] |
-| dataInzio    | date         |
+| dataInizio   | date         |
 
 **CARTA_CLIENTE:**
 
 | Attributo | Dominio                                          |
 | :-------- | :----------------------------------------------- |
 | codCli    | int                                              |
-| CF        | string (16 caratteri)                            |
+| titolare  | string (16 caratteri)                            |
 | saldo     | int (positivo)                                   |
 | fasceEtà  | int (positivo) x int (positivo) x int (positivo) |
 
@@ -124,36 +127,36 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 **TURNO:**
 
-| Attributo  | Dominio   |
-| :--------- | :-------- |
-| turnoInzio | timestamp |
-| turnoFine  | timestamp |
+| Attributo   | Dominio   |
+| :---------- | :-------- |
+| turnoInizio | timestamp |
+| turnoFine   | timestamp |
 
 **APPUNTAMENTO**:
 
-| Attributo  | Dominio        |
-| :--------- | :------------- |
-| dataOra    | timestamp      |
-| saldoInzio | int (positivo) |
-| saldoFine  | int (positivo) |
+| Attributo   | Dominio        |
+| :---------- | :------------- |
+| dataOra     | timestamp      |
+| saldoInizio | int (positivo) |
+| saldoFine   | int (positivo) |
 
 **RICEZIONE:**
 
 | Attributo    | Dominio   |
 | :----------- | :-------- |
 | codRicezione | int       |
-| riceveInzio  | timestamp |
+| riceveInizio | timestamp |
 | riceveFine   | timestamp |
 
 **TRASPORTO:**
 
-| Attributo      | Dominio        |
-| :------------- | :------------- |
-| codTrasporto   | int            |
-| nCasse         | int (positivo) |
-| trasportoInzio | timestamp      |
-| trasportoFine  | timestamp      |
-| sedeRitiro     | string         |
+| Attributo       | Dominio        |
+| :-------------- | :------------- |
+| codTrasporto    | int            |
+| nCasse          | int (positivo) |
+| trasportoInizio | timestamp      |
+| trasportoFine   | timestamp      |
+| sedeRitiro      | string         |
 
 **PRODOTTO:**
 
@@ -223,23 +226,23 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 | Nome Vincolo | Entità - associazioni coinvolte                              | Vincolo                                                      |
 | ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| V1           | autorizza - CARTA_CLIENTE                                    | due autorizzazioni per la stessa carta_cliente devono avere *dataInzio* distanti almeno di 6 mesi |
+| V1           | autorizza - CARTA_CLIENTE                                    | due autorizzazioni per la stessa carta_cliente devono avere *dataInizio* distanti almeno di 6 mesi |
 | V2           | prende  - FAMILIARE                                          | un familiare può prendere appuntamento solo se la sua età è maggiore di 16 anni |
 | V3           | nel_nucleo - CARTA_CLIENTE                                   | per ogni *carta_cliente* deve esserci memorizzato in *familiare* un familiare  (titolare)  in relazione con la carta cliente tale per cui il  *CF* del familiare risulta uguale al *CF* della *carta_cliente* |
 | V4           | APPUNTAMENTO                                                 | gli appuntamenti devono essere scaglionati di 20 minuti, di conseguenza non possono esserci due appuntamenti con la differenza minore di 20 minuti tra i rispettivi inizi (dataOra) |
-| V5           | APPUNTAMENTO                                                 | *saldoFine* <= *saldoInzio*                                  |
-| V6           | TURNO                                                        | *turnoInzio <= turnoFine*                                    |
-| V7           | TURNO - riceve - RICEZIONE                                   | Un turno (volontario in uno slot temporale) in associazione riceve con ricezione deve avere *riceveInzio >= turnoInzio and riceveFine <= turnoFine* |
-| V8           | TURNO - trasporta - TRASPORTO                                | Un turno in associazione trasporta con trasporto deve avere *trasportoInzio >= turnoInzio and riceveFine <= trasportoFine* |
-| V9           | TURNO - supervisiona - APPUNTAMENTO                          | Un turno in associazione supervisiona con appuntamento deve avere *dataOra >= turnoInzio and dataOra <= trasportoFine* |
+| V5           | APPUNTAMENTO                                                 | *saldoFine* <= *saldoInizio*                                 |
+| V6           | TURNO                                                        | *turnoInizio <= turnoFine*                                   |
+| V7           | TURNO - riceve - RICEZIONE                                   | Un turno (volontario in uno slot temporale) in associazione riceve con ricezione deve avere *riceveInizio >= turnoInizio and riceveFine <= turnoFine* |
+| V8           | TURNO - trasporta - TRASPORTO                                | Un turno in associazione trasporta con trasporto deve avere *trasportoInizio >= turnoInizio and riceveFine <= trasportoFine* |
+| V9           | TURNO - supervisiona - APPUNTAMENTO                          | Un turno in associazione supervisiona con appuntamento deve avere *dataOra >= turnoInizio and dataOra <= trasportoFine* |
 | V10          | TURNO - riceve - supervisiona - trasporta - TRASPORTO - APPUNTAMENTO - RICEZIONE | Per un turno non ci devono essere attività (svolte da volontario interessato) contemporanee ovvero sovrapposte temporalemente |
-| V11          | RICEZIONE                                                    | *riceveInzio <= riceveFine*                                  |
-| V12          | TRASPORTO                                                    | *trasportoInzio <= trasportoFine*                            |
+| V11          | RICEZIONE                                                    | *riceveInizio <= riceveFine*                                 |
+| V12          | TRASPORTO                                                    | *trasportoInizio <= trasportoFine*                           |
 | V13          | PRODOTTO                                                     | un prodotto se è in relazione con uno *scarico* (*scarta*) non può essere in relazione con un *appuntamento* (*acquista*) e viceversa |
 | V14          | DENARO - SPESA                                               | la somma degli importi in *SPESA* è minore uguale alla somma degli importi di *DENARO* |
 | V15          | MERCE                                                        | una  merce che è stata donata non può essere stata comprata e viceversa, quindi una merce può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
-| V16          | MERCE - include - TRASPORTO                                  | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInzio* |
-| V17          | RICEZIONE - riceve_trasporto - TRASPORTO                     | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInzio <= riceveInizio |
+| V16          | MERCE - include - TRASPORTO                                  | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
+| V17          | RICEZIONE - riceve_trasporto - TRASPORTO                     | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInizio <= riceveInizio |
 | V18          | autorizza                                                    | 30 <= puntiMensili <= 60                                     |
 
 ### Gerarchie (d)
@@ -253,7 +256,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 ### Schema ER ristrutturato (a)
 
-![Social Market Ristrutturato ER](socialMarket_res.svg)
+![Social Market Ristrutturato ER](.socialMarket_res.svg)
 
 #### **Modifiche ristrutturazione (b)**
 
@@ -311,7 +314,7 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 | ------------ | ------------------------------- | ------------------------------------------------------------ |
 | V15          | DONAZIONE                       | una  donazione che è stata donata non può essere stata comprata e viceversa, quindi una donata può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
 | V16          | DONAZIONE                       | una donazione in denaro (importo is not null) non può essere trasportata |
-| V17          | DONAZIONE- include - TRASPORTO  | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInzio |
+| V17          | DONAZIONE- include - TRASPORTO  | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio |
 | V20          | DONAZIONE - compra - dona       | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
 
 
@@ -326,7 +329,9 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 
 ### Schema logico (e)
 
-![Schema Logico Social Market](schema_logico.png)
+![Schema Logico Social Market](.schema_logico.png)
+
+L'unica trasformazione particolare che abbiamo effettuato è trasformare titolare in *CARTA_CLIENTE* in chiave esterna su *FAMILIARE* per implementare il vincolo *V3*.
 
 ### Verifica qualità dello schema (f)
 
