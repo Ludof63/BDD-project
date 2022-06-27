@@ -228,7 +228,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | V1           | autorizza - CARTA_CLIENTE                                    | due autorizzazioni per la stessa carta_cliente devono avere *dataInizio* distanti almeno di 6 mesi |
 | V2           | prende  - FAMILIARE                                          | un familiare può prendere appuntamento solo se la sua età è maggiore di 16 anni |
-| V3           | nel_nucleo - CARTA_CLIENTE                                   | per ogni *carta_cliente* deve esserci memorizzato in *familiare* un familiare  (titolare)  in relazione con la carta cliente tale per cui il  *CF* del familiare risulta uguale al *CF* della *carta_cliente* |
+| V3           | nel_nucleo - CARTA_CLIENTE                                   | per ogni *carta_cliente* deve esserci memorizzato in *familiare* un familiare  (titolare)  in relazione con la carta cliente tale per cui il  titolare del familiare risulta uguale al *CF* della *carta_cliente* |
 | V4           | APPUNTAMENTO                                                 | gli appuntamenti devono essere scaglionati di 20 minuti, di conseguenza non possono esserci due appuntamenti con la differenza minore di 20 minuti tra i rispettivi inizi (dataOra) |
 | V5           | APPUNTAMENTO                                                 | *saldoFine* <= *saldoInizio*                                 |
 | V6           | TURNO                                                        | *turnoInizio <= turnoFine*                                   |
@@ -285,7 +285,7 @@ Riportiamo solo le tabelle dei domini di relazioni di cui abbiamo modificato att
 | Attributo  | Dominio               |
 | :--------- | :-------------------- |
 | codCli     | int                   |
-| CF         | string (16 caratteri) |
+| titolare   | string (16 caratteri) |
 | saldo      | int (positivo)        |
 | età_<16    | int (positivo)        |
 | età_ 16-64 | int (positivo)        |
@@ -331,8 +331,97 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 
 ![Schema Logico Social Market](.schema_logico.png)
 
-L'unica trasformazione particolare che abbiamo effettuato è trasformare titolare in *CARTA_CLIENTE* in chiave esterna su *FAMILIARE* per implementare il vincolo *V3*.
+L'unica trasformazione "particolare" che abbiamo effettuato è trasformare titolare in *CARTA_CLIENTE* in chiave esterna su *FAMILIARE* per implementare il vincolo *V3*.
 
 ### Verifica qualità dello schema (f)
 
-codProdotto -> tipo
+Per come abbiamo interpretato il dominio, per ogni relazione cerchiamo le dipendenze funzionali, chiavi verificando le qualità delle relazioni.
+
+- **ENTE:**
+  - Dipendenze funzionali:
+    - $codEnte \rightarrow nome\; indirizzo $
+    - $nome\; indirizzo  \rightarrow codEnte$
+  - Chiavi e conclusioni:
+    - Le chiavi della relazione *ENTE* sono quindi *{codEnte}* e *{nome, indirizzo}*
+    - La relazione è in *BCNF* poiché  le dipendenzae funzionali presentano a sinistra una chiave della relazione
+- **AUTORIZZA**
+  - Dipendenze funzionali:
+    - $codEnte\; codCli  \rightarrow puntiMensili\; dataInzio$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *FAMILIARE*  è quindi *{codEnte, codCli}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **FAMILIARE:**
+  - Dipendenze funzionali:
+    - $CF \rightarrow nome\; cognome\; dataNascita\; luogoNascita\; telefono\; sesso\; codCli\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *AUTORIZZA*  è quindi *{CF}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **CARTA_CLIENTE:**
+  - Dipendenze funzionali:
+    - $codCli \rightarrow titolare\; saldo\; età\_16\; età\_16\_64\; età\_64$
+    - $titolare \rightarrow codCli\; saldo\; età\_16\; età\_16\_64\; età\_64$
+  - Chiavi e conclusioni:
+    - Le chiavi della relazione *CARTA_CLIENTE* sono quindi *{codCli}* e {titolare}
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **VOLONTARIO:**
+  - Dipendenze funzionali:
+    - $CF \rightarrow nome\; cognome\; dataNascita\; luogoNascita\; telefono\; sesso\; tipiServizio\; tipiVeicolo\; disponibilità\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *VOLONTARIO*  è quindi *{CF}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **TURNO:**
+  - Dipendenze funzionali:
+    - $turnoInizio\; CF \rightarrow turnoFine\; dataOra\; dataNascita\; codTrasporto\; codRiceve\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *TURNO*  è quindi *{turnoInizio, CF}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **APPUNTAMENTO:**
+  - Dipendenze funzionali:
+    - $dataOra \rightarrow saldoInizio\; codCli$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *APPUNTAMENTO*  è quindi *{dataOra}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **RICEVE:**
+  - Dipendenze funzionali:
+    - $codRiceve \rightarrow riceveInizio\; riceveFine$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *RICEVE*  è quindi *{codRiceve}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **TRASPORTO:**
+  - Dipendenze funzionali:
+    - $codTrasporto \rightarrow trasportoInizio\; trasportoFine\; nCasse\; sedeRitiro\; codRiceve\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *TRASPORTO* è quindi *{codTrasporto}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **PRODOTTO:**
+  - Dipendenze funzionali:
+    - $codUnità \rightarrow scadenza\; dataOra\; codProdotto\; dataScarico\; codDonazione\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *PRODOTTO* è quindi *{codUnità}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **INVENTARIO:**
+  - Dipendenze funzionali:
+    - $codProdotto \rightarrow quantità\; tipo\; nomeProdotto\; costoPunti\; scadenzaAggiuntiva\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *INVENTARIO* è quindi *{codProdotto}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **DONAZIONE:**
+  - Dipendenze funzionali:
+    - $codDonazione \rightarrow dataOra\; importo\; codTrasporto\; CF\; codSpesa\;$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *DONAZIONE* è quindi *{codDonazione}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **DONATORE:**
+  - Dipendenze funzionali:
+    - $CF \rightarrow telefono\; nome\; cognome$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *DONAZIONE* è quindi *{CF}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **SPESA:**
+  - Dipendenze funzionali:
+    - $codSpesa \rightarrow importo$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione *SPESA* è quindi *{codSpesa}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+
+**Conclusione**: essendo tutte le relazioni ottenute in BCNF allora lo schema è di qualità.
