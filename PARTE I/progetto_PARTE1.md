@@ -227,7 +227,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | V1           | autorizza - CARTA_CLIENTE                                    | due autorizzazioni per la stessa carta_cliente devono avere *dataInizio* distanti almeno di 6 mesi |
 | V2           | prende  - FAMILIARE                                          | un familiare può prendere appuntamento solo se la sua età è maggiore di 16 anni |
-| V3           | FAMILIARE- titolare- nel_nucleo - CARTA_CLIENTE              | Il familiare in relazione titolare con un carta_cliente deve essere in relazione con la carta_cliente attraverso la relazione nel_nucleo |
+| V3           | FAMILIARE- titolare- nel_nucleo - CARTA_CLIENTE              | Il familiare in relazione titolare con un carta_cliente deve essere in relazione con la stessa carta_cliente attraverso la relazione nel_nucleo |
 | V4           | APPUNTAMENTO                                                 | gli appuntamenti devono essere scaglionati di 20 minuti, di conseguenza non possono esserci due appuntamenti con la differenza minore di 20 minuti tra i rispettivi inizi (dataOra) |
 | V5           | APPUNTAMENTO                                                 | *saldoFine* <= *saldoInizio*                                 |
 | V6           | TURNO                                                        | *turnoInizio <= turnoFine*                                   |
@@ -242,7 +242,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | V15          | MERCE                                                        | una  merce che è stata donata non può essere stata comprata e viceversa, quindi una merce può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
 | V16          | MERCE - include - TRASPORTO                                  | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
 | V17          | RICEZIONE - riceve_trasporto - TRASPORTO                     | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInizio <= riceveInizio |
-| V18          | autorizza                                                    | 30 <= puntiMensili <= 60                                     |
+| V18          | PRODOTTO - INVENTARIO - SCARICO - scarta - di_tipo  - acquista - APPUNTAMENTO | La quantità di un prodotto p in inventario deve essere il numero di unità (in prodotto) in relazione di_tipo con p e non acquistai e non scartati |
 
 ### Gerarchie (d)
 
@@ -313,7 +313,9 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 | V15          | DONAZIONE                       | una  donazione che è stata donata non può essere stata comprata e viceversa, quindi una donata può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
 | V16          | DONAZIONE                       | una donazione in denaro (importo is not null) non può essere trasportata |
 | V17          | DONAZIONE- include - TRASPORTO  | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio |
-| V20          | DONAZIONE - compra - dona       | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
+| V19          | DONAZIONE - compra - dona       | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
+| V20          | DONAZIONE                       | una donazione in denaro non può essere trasportata           |
+| V21          | TURNO                           | INon ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
 
 
 

@@ -26,9 +26,9 @@ CREATE TABLE Carta_Cliente(
 codCli int PRIMARY KEY,
 titolare char(17) NOT NULL,
 saldo int NOT NULL CHECK(saldo >= 0),
-età_16 int NOT NULL CHECK(saldo >= 0),
-età_16_64 int NOT NULL CHECK(saldo >= 0),
-età_64 int NOT NULL CHECK(saldo >= 0),
+età_16 int NOT NULL CHECK(età_16 >= 0),
+età_16_64 int NOT NULL CHECK(età_16_64 >= 0),
+età_64 int NOT NULL CHECK(età_64 >= 0),
 UNIQUE(titolare)
 );
 
@@ -78,11 +78,11 @@ CHECK(riceveInizio <= riceveFine)
 -- INVENTARIO
 CREATE TABLE Inventario(
 codProdotto int PRIMARY KEY,
-quantità integer NOT NULL,
+quantità integer NOT NULL CHECK(quantità >= 0),
 tipo varchar(20) NOT NULL,
 nomeProdotto varchar(20) NOT NULL,
-costoPunti integer NOT NULL,
-scadenzaAggiuntiva integer    
+costoPunti integer NOT NULL CHECK(costoPunti >= 0),
+scadenzaAggiuntiva integer
 );
 
 -- SCARICO
@@ -151,7 +151,8 @@ dataOra timestamp REFERENCES Appuntamento (dataOra) ON UPDATE CASCADE,
 codTrasporto int REFERENCES Trasporto (codTrasporto) ON UPDATE CASCADE,
 codRiceve int REFERENCES Ricezione (codRiceve) ON UPDATE CASCADE,
 PRIMARY KEY(turnoInizio, CF),
-CHECK(turnoInizio <= turnoFine)
+CHECK(turnoInizio <= turnoFine),
+UNIQUE(dataOra)
 );
 
 -- DONAZIONE
@@ -187,8 +188,9 @@ CHECK (
     OR
     ((dataOra is not null) and (dataScarico is null))
     OR 
-    ((dataOra is null) and (dataScarico is null))
-));
+    ((dataOra is null) and (dataScarico is null)))
+UNIQUE(nome)
+);
 
 
 
