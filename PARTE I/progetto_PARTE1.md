@@ -43,7 +43,7 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 - **ENTE** è un ente che fornisce autorizzazione e/o fornisce volontari. Un autorizzazione ha una durata di 6 mesi ed è caratterizzata da un numero di punti mensili e una data di inizio
 - **FAMILIARE** è una persona del nucleo familiare relativo ad una carta_cliente.
 - **CARTA_CLIENTE** rappresenta il "cliente" inteso come la carta relativa ad un cliente e quindi in relazione nel_nucleo per una o più familiari intese come "gruppo familiare". 
-  - *Titolare* in essa rappresenta il codice fiscale del titolare, di cui i dati anagrafici sono ricavabili dal familiare con quel CF, per lo sviluppo dello schema ER abbiamo ritenuto di non rappresentare al fine di mantenere una maggiore leggibilità nello schema un'ulteriore associazione tra le due entità, quello che poi verrà implementato ovvero titolare come chiave esterna su familiare. 
+  - Un carta clienti ha *nel_nucleo* più familiari mentre un familiare è *titolare* di essa
   - In fasce d'età si memorizzano il numero di familiari per ogni fascia d'età per ottimizzare non dovendo ricercare su tutti i familiari di un nucleo  le età.
 
 - **VOLONTARIO** rappresenta il volontario del market 
@@ -94,7 +94,6 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | Attributo | Dominio                                          |
 | :-------- | :----------------------------------------------- |
 | codCli    | int                                              |
-| titolare  | string (16 caratteri)                            |
 | saldo     | int (positivo)                                   |
 | fasceEtà  | int (positivo) x int (positivo) x int (positivo) |
 
@@ -228,7 +227,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | V1           | autorizza - CARTA_CLIENTE                                    | due autorizzazioni per la stessa carta_cliente devono avere *dataInizio* distanti almeno di 6 mesi |
 | V2           | prende  - FAMILIARE                                          | un familiare può prendere appuntamento solo se la sua età è maggiore di 16 anni |
-| V3           | nel_nucleo - CARTA_CLIENTE                                   | per ogni *carta_cliente* deve esserci memorizzato in *familiare* un familiare  (titolare)  in relazione con la carta cliente tale per cui il  titolare del familiare risulta uguale al *CF* della *carta_cliente* |
+| V3           | FAMILIARE- titolare- nel_nucleo - CARTA_CLIENTE              | Il familiare in relazione titolare con un carta_cliente deve essere in relazione con la carta_cliente attraverso la relazione nel_nucleo |
 | V4           | APPUNTAMENTO                                                 | gli appuntamenti devono essere scaglionati di 20 minuti, di conseguenza non possono esserci due appuntamenti con la differenza minore di 20 minuti tra i rispettivi inizi (dataOra) |
 | V5           | APPUNTAMENTO                                                 | *saldoFine* <= *saldoInizio*                                 |
 | V6           | TURNO                                                        | *turnoInizio <= turnoFine*                                   |
@@ -282,14 +281,13 @@ Riportiamo solo le tabelle dei domini di relazioni di cui abbiamo modificato att
 
 **CARTA_CLIENTE:**
 
-| Attributo  | Dominio               |
-| :--------- | :-------------------- |
-| codCli     | int                   |
-| titolare   | string (16 caratteri) |
-| saldo      | int (positivo)        |
-| età_<16    | int (positivo)        |
-| età_ 16-64 | int (positivo)        |
-| età_>64    | int (positivo)        |
+| Attributo  | Dominio        |
+| :--------- | :------------- |
+| codCli     | int            |
+| saldo      | int (positivo) |
+| età_<16    | int (positivo) |
+| età_ 16-64 | int (positivo) |
+| età_>64    | int (positivo) |
 
 **VOLONTARIO**:
 
@@ -330,8 +328,6 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 ### Schema logico (e)
 
 ![Schema Logico Social Market](.schema_logico.png)
-
-L'unica trasformazione "particolare" che abbiamo effettuato è trasformare titolare in *CARTA_CLIENTE* in chiave esterna su *FAMILIARE* per implementare il vincolo *V3*.
 
 ### Verifica qualità dello schema (f)
 
