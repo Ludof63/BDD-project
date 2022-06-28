@@ -12,7 +12,7 @@
 
 
 
-## Requisiti ristrutturati (1)
+## **Requisiti ristrutturati (1)**
 
 Abbiamo interpretato il dominio fornitoci nel seguente modo:
 
@@ -32,7 +32,7 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 
 - Intendiamo il trasporto come un trasporto di una o più merci (donazioni diverse) mentre la ricezione è un lavoro che fanno più volontari su un trasporto
 
-## Progetto concettuale (2)
+## **Progetto concettuale (2)**
 
 ### Diagramma ER (a)
 
@@ -257,13 +257,13 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | DONAZIONE | una donazione può essere specializzata in MERCE o DENARO a seconda che sia rispettivamente in prodotti o denaro | *totale ed esclusiva* |
 | DONATORE  | un donatore può essere specializzato un PRIVATO o  un' AZIENDA | *totale ed esclusiva* |
 
-## Progetto logico (3)
+## **Progetto logico (3)**
 
 ### Schema ER ristrutturato (a)
 
 ![Social Market Ristrutturato ER](.socialMarket_res.svg)
 
-#### **Modifiche ristrutturazione (b)**
+#### Modifiche ristrutturazione (b)
 
 #### Scelte modifiche attributi
 
@@ -321,7 +321,7 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 | V17          | DONAZIONE- include - TRASPORTO  | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio |
 | V19          | DONAZIONE - compra - dona       | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
 | V20          | DONAZIONE                       | una donazione in denaro non può essere trasportata           |
-| V21          | TURNO                           | INon ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
+| V21          | TURNO                           | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
 
 
 

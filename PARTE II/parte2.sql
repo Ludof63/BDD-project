@@ -82,13 +82,13 @@ BEGIN
     FROM Scarico
     WHERE dataScarico = current_date);
     
-    IF(found)
+    IF((SELECT COUNT(*)
+    FROM Scarico
+    WHERE dataScarico = current_date)= 0)
     THEN
-        RAISE EXCEPTION 'Oggi è già presente uno scarico';    
+        INSERT INTO Scarico VALUES (current_date);   
     END IF;
-
-	INSERT INTO Scarico VALUES (current_date);
-    
+  
     UPDATE Prodotto
     SET dataScarico = current_date
     FROM Inventario
@@ -98,33 +98,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+SELECT codUnità
+FROM Inventario NATURAL JOIN Prodotto
+WHERE scadenza is not null  and dataOra is null
+and dataScarico is null and (scadenzaAggiuntiva is null or  scadenza + interval '1 month' * scadenzaAggiuntiva < current_date) ;
 CALL doScarico();
 
 
 
 --D.B:
-CREATE OR REPLACE FUNCTION test(volontarioCF CHAR (17), startDate DATE, endDate DATE ) 
-RETURNS void
-AS
-$$ 
-BEGIN
-    PERFORM(
-    SELECT CF
-    FROM Volontario
-    WHERE CF = volontarioCF);
-    
-    IF(not found)
-    THEN
-        RAISE EXCEPTION 'Il volontario inserito non è presente';     
-    END IF;
-    
-END; 
-$$ LANGUAGE plpgsql;
-
-
 DROP FUNCTION turniInData
 CREATE OR REPLACE FUNCTION turniInData(volontarioCF CHAR (17), startDate DATE, endDate DATE ) 
-RETURNS TABLE (inizioDelTurno timeStamp , fineDelTurno timeStamp)
+RETURNS TABLE (inizioDelTurno timeStamp)
 AS
 $$ 
 BEGIN
@@ -139,7 +125,7 @@ BEGIN
     END IF;
 
     RETURN QUERY(
-    SELECT turnoInizio,turnoFine
+    SELECT turnoInizio
     FROM turno 
     WHERE (turnoInizio BETWEEN startDate and endDate)
     and   (turnoFine BETWEEN startDate and endDate)
@@ -147,7 +133,9 @@ BEGIN
 END; 
 $$ LANGUAGE plpgsql;
 
-SELECT turniInData('YLYBSG62L6KD442W', '2022-01-15', '2022-06-15')
+
+
+
 
 --E TRIGGER
 --E.A:
@@ -164,30 +152,7 @@ verifica del vincolo che nessun volontario possa essere assegnato a più attivit
 
 
 --INZIO TRIGGER A
-CREATE OR REPLACE FUNCTION checkTurniInsertFun() RETURNS trigger AS 
-$$ 
-BEGIN
-    IF((
-        SELECT COUNT(dataOra)
-        FROM Turno T
-        WHERE T.cf = NEW.cf AND (T.turnoInizio,T.turnoFine) OVERLAPS (NEW.turnoInizio, new.TurnoFine)
-       ) > 0)
-    THEN 
-        RAISE EXCEPTION 'Il volontario ha già un turno tra questi orari';  
-    ELSE
-        RETURN NEW; 
-    END IF;
-       
-END; 
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER checkTurni 
-BEFORE INSERT ON turno 
-FOR EACH ROW 
-EXECUTE FUNCTION checkTurniInsertFun(); 
-
-
-CREATE OR REPLACE FUNCTION checkTurniUpdateFun() RETURNS trigger AS 
+CREATE OR REPLACE FUNCTION checkTurniFun() RETURNS trigger AS 
 $$
 DECLARE
 riceveStart timestamp;
@@ -203,16 +168,13 @@ appEnd timestamp;
 app boolean;
 BEGIN
     -- prima verifica
-    IF(NEW.turnoInizio <> OLD.turnoInizio OR NEW.turnoFine <> OLD.turnoFine)
-    THEN
-        IF((
-            SELECT COUNT(dataOra)
-            FROM Turno T
-            WHERE T.cf = NEW.cf AND (T.turnoInizio,T.turnoFine) OVERLAPS (NEW.turnoInizio, new.TurnoFine)
-            ) > 0)
-        THEN 
-            RAISE EXCEPTION 'Il volontario ha già un turno tra questi orari';  
-        END IF;
+    IF((
+        SELECT COUNT(dataOra)
+        FROM Turno T
+        WHERE T.cf = NEW.cf AND (T.turnoInizio,T.turnoFine) OVERLAPS (NEW.turnoInizio, new.TurnoFine)
+        ) > 0)
+    THEN 
+        RAISE EXCEPTION 'Il volontario ha già un turno tra questi orari';  
     END IF;
     
     
@@ -227,7 +189,7 @@ BEGIN
         IF(not (riceveStart >= NEW.turnoInizio  and riceveEnd <= NEW.turnoFine))
         THEN
             RAISE EXCEPTION 'Ricezione va fuori dal turno'; 
-        END iF;
+        END IF;
         
     ELSE
         ric := false;
@@ -235,8 +197,8 @@ BEGIN
     
     IF(NEW.codTrasporto is not null)
     THEN
-        SELECT rtrasportoInizio,trasportoFine INTO traspStart,traspEnd
-        FROM Trasportp
+        SELECT trasportoInizio,trasportoFine INTO traspStart,traspEnd
+        FROM Trasporto
         WHERE Trasporto.codRiceve = NEW.codTrasporto;
         tr  := true;
         
@@ -250,14 +212,14 @@ BEGIN
     
     IF(NEW.dataOra is not null)
     THEN
-        appStart := dataOra;
-        appEnd := dataOra + (20 * interval '1 minute');
+        appStart := NEW.dataOra;
+        appEnd := NEW.dataOra + (20 * interval '1 minute');
         app  := true;
         
         IF(not (appStart >= NEW.turnoInizio  and appEnd <= NEW.turnoFine))
         THEN
             RAISE EXCEPTION 'Appuntamento va fuori dal turno'; 
-        END iF;
+        END IF;
     ELSE
         app := false;
     END IF;
@@ -270,8 +232,8 @@ BEGIN
             IF(ric)
             THEN
                 -- app ric tr
-                IF( ((riceveStart,riceveEnd) OVERLAPS (traspStar,traspEnd))  or OVERLAPS ((appStart,appEnd) OVERLAPS (traspStar,traspEnd))
-                or OVERLAPS ((appStart,appEnd) OVERLAPS (riceveStar,riceveEnd))
+                IF( ((riceveStart,riceveEnd) OVERLAPS (traspStart,traspEnd))  or OVERLAPS ((appStart,appEnd) OVERLAPS (traspStart,traspEnd))
+                or OVERLAPS ((appStart,appEnd) OVERLAPS (riceveStart,riceveEnd))
                   )
                 THEN 
                    RAISE EXCEPTION 'Il volontario ha attivà sovrapposte come orari'; 
@@ -281,7 +243,7 @@ BEGIN
 
             ELSE
                 -- app tr
-                IF((appStart,appEnd) OVERLAPS (traspStar,traspEnd))
+                IF((appStart,appEnd) OVERLAPS (traspStart,traspEnd))
                 THEN 
                    RAISE EXCEPTION 'Il volontario ha attivà sovrapposte come orari'; 
                 ELSE
@@ -292,7 +254,7 @@ BEGIN
             IF(ric)
             THEN
                 -- app ric
-                IF( (appStart,appEnd) OVERLAPS (riceveStar,riceveEnd))
+                IF( (appStart,appEnd) OVERLAPS (riceveStart,riceveEnd))
                 THEN 
                    RAISE EXCEPTION 'Il volontario ha attivà sovrapposte come orari'; 
                 ELSE
@@ -311,7 +273,7 @@ BEGIN
             IF(ric)
             THEN
                 -- ric tr
-                IF( (riceveStart,riceveEnd) OVERLAPS (traspStar,traspEnd) )
+                IF( (riceveStart,riceveEnd) OVERLAPS (traspStart,traspEnd) )
                 THEN 
                    RAISE EXCEPTION 'Il volontario ha attivà sovrapposte come orari'; 
                 ELSE
@@ -332,20 +294,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE TRIGGER checkTurni 
-BEFORE UPDATE ON turno 
+BEFORE INSERT or UPDATE ON turno 
 FOR EACH ROW 
-EXECUTE FUNCTION checkTurniUpdateFun();
+EXECUTE FUNCTION checkTurniFun();
 --FINE TRIGGER A
-
-
-UPDATE Turno
-SET codTrasporto = 5
-WHERE turnoInizio = '2022-03-25 15:30:41' and cf = 'YCYSNK31P04I594B'
-
-
-
-
-
 
 
 --E.B:
