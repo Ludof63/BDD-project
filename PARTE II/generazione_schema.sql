@@ -82,7 +82,8 @@ quantità integer NOT NULL CHECK(quantità >= 0),
 tipo varchar(20) NOT NULL,
 nomeProdotto varchar(20) NOT NULL,
 costoPunti integer NOT NULL CHECK(costoPunti >= 0),
-scadenzaAggiuntiva integer
+scadenzaAggiuntiva integer,
+UNIQUE(nomeProdotto)
 );
 
 -- SCARICO
@@ -189,7 +190,7 @@ CHECK (
     ((dataOra is not null) and (dataScarico is null))
     OR 
     ((dataOra is null) and (dataScarico is null)))
-UNIQUE(nome)
+
 );
 
 

@@ -1,12 +1,7 @@
 set search_path to socialMarket;
 
 --B VISTA
--- Come ultimo mese intendiamo maggio nei nostri test
-
-/*TEST VISTA
-DROP VIEW riassuntoNucleoFamiliare
-SELECT * FROM riassuntoNucleoFamiliare
-*/
+-- Come ultimo mese intendiamo maggio (per i nostri dati "siamo a metà giugno quindi mese precedente")
 
 CREATE OR REPLACE VIEW riassuntoNucleoFamiliare (Famiglia, PuntiMensili, PuntiResidui, Autorizzati, Minori16, NumeroSpese,PuntiNonUtilizzati, PercReperibili,PercPerReperibili)  AS
 SELECT Q1.famiglia,Q1.PuntiMensili, Q1.puntiResidui, Q1.autorizzati , Q1.età_16, 
@@ -38,6 +33,8 @@ JOIN
 as Q3
 ON Q2.famiglia = Q3.famiglia;
 
+
+
 --C QUERY
 
 --C.A:
@@ -48,6 +45,7 @@ WHERE codCli NOT IN(
     FROM Prodotto NATURAL JOIN INVENTARIO NATURAL JOIN Appuntamento
     WHERE Appuntamento.dataOra BETWEEN '2022-05-01' and '2022-05-30'
 );
+
 
 --C.B:
 SELECT tipo
@@ -67,7 +65,12 @@ HAVING COUNT(codUnità) >
             (SELECT COUNT(codUnità)/COUNT(DISTINCT codProdotto)
             FROM Prodotto NATURAL JOIN Scarico NATURAL JOIN INVENTARIO
             WHERE tipo = I.tipo);
-            
+
+
+
+
+
+
 --D FUNZIONI
 
 --D.A:
@@ -160,7 +163,7 @@ verifica del vincolo che nessun volontario possa essere assegnato a più attivit
 */
 
 
-
+--INZIO TRIGGER A
 CREATE OR REPLACE FUNCTION checkTurniInsertFun() RETURNS trigger AS 
 $$ 
 BEGIN
@@ -183,7 +186,7 @@ BEFORE INSERT ON turno
 FOR EACH ROW 
 EXECUTE FUNCTION checkTurniInsertFun(); 
 
---INZIO TRIGGER A
+
 CREATE OR REPLACE FUNCTION checkTurniUpdateFun() RETURNS trigger AS 
 $$
 DECLARE
@@ -346,8 +349,7 @@ WHERE turnoInizio = '2022-03-25 15:30:41' and cf = 'YCYSNK31P04I594B'
 
 
 --E.B:
---abbiamo già usato questo trigger nello script di inizializzione per mantenere quantità prodotti in inventario valida
-
+--abbiamo già usato questo trigger nello script di inizializzione
 --INZIO TRIGGER B
 CREATE OR REPLACE FUNCTION funIncr() RETURNS trigger AS
 $$

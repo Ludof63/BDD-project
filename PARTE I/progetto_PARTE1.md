@@ -28,6 +28,8 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 - Per la data aggiuntiva di scadenza per i prodotti che deperibili che la memorizzano la intendiamo in numero di mesi aggiuntivi alla scadenza
 - Lo scarico dei prodotti può avvenire una volta per giorno, quindi data identifica lo scarico
 - Memorizziamo i turni dei dipendenti in slot di tempo collegati a uno specifico volontario il lavoro che svolge lo deduciamo poi dalle diverse associazioni con i diversi lavori (trasporta - riceve - supervisiona), ***un volontario non può avere turni che si sovrappongono*** in termini intervalli di tempo, e ***un volontario può svolgere in un turno al massimo un'attività per ogni tipo di attività*** (quindi massimo tre attività (diverse))
+  - *In caso un volontario dovesse eseguire attività dello stesso tipo in orari successivi si registrano turni successivi*
+
 - Intendiamo il trasporto come un trasporto di una o più merci (donazioni diverse) mentre la ricezione è un lavoro che fanno più volontari su un trasporto
 
 ## Progetto concettuale (2)
@@ -71,6 +73,10 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 **CARTA_CLIENTE:**
 
 - titolare
+
+**INVENTARIO:**
+
+- nomeProdotto
 
 #### Domini attributi
 
@@ -400,8 +406,9 @@ Per come abbiamo interpretato il dominio, per ogni relazione cerchiamo le dipend
 - **INVENTARIO:**
   - Dipendenze funzionali:
     - $codProdotto \rightarrow quantità\; tipo\; nomeProdotto\; costoPunti\; scadenzaAggiuntiva\;$
+    - $nomeProdotto \rightarrow quantità\; tipo\; codProdotto\; costoPunti\; scadenzaAggiuntiva\;$
   - Chiavi e conclusioni:
-    - Le chiave della relazione *INVENTARIO* è quindi *{codProdotto}*
+    - Le chiavi della relazione *INVENTARIO* sono quindi *{codProdotto} *e *{nomeProdotto}*
     - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
 - **DONAZIONE:**
   - Dipendenze funzionali:
@@ -422,4 +429,4 @@ Per come abbiamo interpretato il dominio, per ogni relazione cerchiamo le dipend
     - Le chiave della relazione *SPESA* è quindi *{codSpesa}*
     - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
 
-**Conclusione**: essendo tutte le relazioni ottenute in BCNF allora lo schema è di qualità.
+**Conclusione**: *essendo tutte le relazioni ottenute in BCNF allora lo schema è di qualità*.
