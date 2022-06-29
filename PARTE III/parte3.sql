@@ -21,6 +21,7 @@ WHERE scadenza is NULL and dataOra >= '2022-5-1';
 
 
 --B: transazione
+-- utilizzare auto rollback on error
 --i valori nelle variabili sono per test
 BEGIN TRANSACTION;
 DO $$

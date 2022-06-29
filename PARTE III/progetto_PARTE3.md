@@ -14,6 +14,8 @@
 
 ### Interrogazioni e carico di lavoro (a)
 
+#### Query_1
+
 Alice, membro del social market, vuole organizzare una festa per tutti i volontari che hanno meno di 25 anni
 
 ```sql
@@ -21,6 +23,8 @@ SELECT CF
 FROM Volontario
 WHERE dataNascita > '1997-1-1';
 ```
+
+#### Query_2
 
 Marco, organizzatore del social market, necessita di sapere quali clienti hanno saldo "critico" (minore di 10 punti) e hanno nuclei familiari con almeno due elementi in una delle fasce "sensibili" (minori di 16 anni o maggiori di 64 anni).
 
@@ -30,23 +34,39 @@ FROM CARTA_CLIENTE
 WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 ```
 
+#### Query_3
+
 Anna, vuole sapere i punti totali spesi dai clienti dopo l'inizio di Maggio per prodotti non deperibili
 
 ```sql
 SELECT SUM(costoPunti)
-FROM Prodotto NATURAL JOIN Appuntamento  NATURAL JOIN Inventario
+FROM Prodotto NATURAL JOIN Inventario
 WHERE scadenza is NULL and dataOra >= '2022-5-1';
 ```
 
-
-
 ### Progetto fisico (b)
 
+#### Query_1
 
+Per la prima query del carico di lavoro scelto,  scegliamo di creare a suo supporto un indice ordinato clusterizzato (secondario) ad albero sull'attributo dataNascita della tabella VOLONTARIO, questo ci permetterà di effettuare una selezione di tipo range sull'attributo in modo più efficiente, lo creiamo clusterizzato perché per il nostro carico di lavoro è necessario creare su volontario un solo indice.
+
+```sql
+
+```
+
+#### Query_2
+
+Per la seconda query del carico di lavoro scelto, abbiamo scelto di creare a suo supporto un indice ordinato clusterizzato (secondario) ad albero sull'attributo saldo, poiché l'attributo saldo nella query_2 è il fattore booleano e quindi ci permette di selezionare più efficientemente rappresentando una condizione che se false rende falsa la selezione della tupla considerata, nel nostro caso possiamo percorrere l'indice e trovare il punto nel file da cui poi scorrere i blocchi nel senso inverso all'ordinamento, essendo clusterizzato  rendiamo così minimi gli accessi ai blocchi.
+
+```sql
+
+```
+
+#### Query_3
+
+Per la terza query delcarico di lavoro
 
 ### Tuple e dimensioni dei blocchi (c)
-
-
 
 
 
