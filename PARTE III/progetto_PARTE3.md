@@ -88,7 +88,12 @@ END$$;
 COMMIT;
 ```
 
+Per questa transazione il livello di isolamento consigliato è il **READ COMMITED*** poiché non riteniamo di dover considerare anomalie di *phantom row* dato che le letture effettuate nella transazione coinvolgono singole tuple, riteniamo che acquisire i lock sulle intere tabelle sia eccessivo, inoltre anche le anomalie di *unreptable read* non ci interessano poiché non effettuiamo letture ripetute sulla stessa risorsa nel corso della transazione  
 
+Il livello *REPETABLE READ* fa si che nella nostra transazione debbano essere acuisti i lock di scrittura (esclusivi) all'inizio e rilasciati al suo termine (COMMIT o ROLLBACK) mentre i lock condivisi (lettura) vengono acquisiti e rilasciati appena possibile, questo ci permette di evitare*:
+
+- *lost update*: in caso una transazione concorrente leggesse  la tupla  X di AUTORIZZA prima che la nostra transazione la modifichi e poi dopo la nostra modifica (non avendola vista) la modificasse ulteriormente si perderebbe il nostro update, questo è evitato acquisendo il lock di scrittura (esclusivo) su X, una transazione concorrente non potrà acquisire un lock in lettura su X fino al COMMIT della transazione e quindi leggere in seguito un valore aggiornato.
+- *dirty read:* in caso una transazione T2 concorrente volesse leggere la tupla che aggiorniamo X di AUTORIZZA, nel caso in cui la nostra transazione andasse in rollback e la lettura effettuata da T2 avvenisse prima del ROLLBACK, essa leggere un valore "sporco" e quindi acquisendo il lock su X in scrittura e rilasciandolo solo al ROLLBACK della transazione T2 potrebbe acquisire lock solo quando il valore di X è stato riprisitinato ad uno stato corretto.
 
 
 
