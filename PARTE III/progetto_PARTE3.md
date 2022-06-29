@@ -118,3 +118,33 @@ Il livello *REPETABLE READ* fa si che nella nostra transazione debbano essere ac
 
 
 ## **Controllo dell'accesso (11)**
+
+#### Alice
+
+Alice è *gestore del social market* quindi ragionevolmente potrà avere tutti i permessi sullo schema social market 
+
+```sql
+--ALICE gestore del social market
+CREATE USER Alice password 'Alice';
+GRANT USAGE ON SCHEMA socialmarket TO Alice WITH GRANT OPTION;
+-- garantiamo ad Alice tutti i permessi
+GRANT ALL PRIVILEGES ON SCHEMA socialmarket to Alice WITH GRANT OPTION;
+```
+
+
+
+#### Roberto
+
+Roberto è un volontario del social market quindi per come abbiamo interpretato lo schema dovrà avere essere in grado di:
+
+- visualizzare le informazioni relative ai propri turni
+- visualizzare le informazioni relative agli appuntamenti da lui seguiti (scriver??)
+- visualizzare le informazioni su i trasporti in cui è coinvolto
+- visualizzare informazioni sulle ricezioni in cui è coinvolto
+- poter visualizzare e modificare i prodotti (per scarico e appuntamento)
+- poter inserire un nuovo scarico
+
+```
+
+```
+

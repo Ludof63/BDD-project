@@ -47,3 +47,62 @@ COMMIT;
 
 
 
+--C: controllo dell'accesso
+
+--ALICE gestore del social market
+CREATE USER Alice password 'Alice';
+GRANT USAGE ON SCHEMA socialmarket TO Alice WITH GRANT OPTION;
+-- garantiamo ad Alice tutti i permessi
+GRANT ALL PRIVILEGES ON SCHEMA socialmarket to Alice WITH GRANT OPTION;
+
+
+--ROBERTO: volontario del social market
+INSERT INTO volontario  VALUES ('PGNRRT75D01H703D', 'Roberto', 'Paganini', '1975-04-01', 'Salerno', '333333333333', 'M', 'Wagon' , 'ricezione , supervisione , trasporto', 'Mercoledì mattina ');
+CREATE USER Roberto PASSWORD 'roberto';
+
+GRANT USAGE ON SCHEMA socialMarket TO roberto;
+
+-- permesoo di leggere e modificare su prodotto
+GRANT SELECT,UPDATE ON prodotto TO roberto;
+
+-- permesso di inserire in scarico
+GRANT INSERT ON scarico TO roberto;
+
+-- permesso di leggere tutti i suoi turni, appuntamenti, trasporto, ricezione
+CREATE VIEW turniCF AS
+SELECT *
+FROM turno
+WHERE CF = 'PGNRRT75D01H703D';
+
+CREATE VIEW appuntamentoCF AS
+SELECT *
+FROM appuntamento
+WHERE dataora = (SELECT dataOra FROM turniCF);
+
+CREATE VIEW trasportoCF AS
+SELECT *
+FROM trasporto
+WHERE codTrasporto = (SELECT codTrasporto FROM turniCF);
+
+CREATE VIEW ricezioneCF AS
+SELECT *
+FROM ricezione
+WHERE codRiceve = (SELECT codRiceve FROM turniCF);
+
+GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurniCF TO roberto;
+
+
+
+
+
+
+
+
+SELECT N.oid, N.nspname, C.relname, C.relfilenode, C.relpages, C.reltuples
+FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
+WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','prodotto', 'inventario','','carta_cliente');
+
+
+
+
+
