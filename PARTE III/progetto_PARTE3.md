@@ -19,7 +19,7 @@ Alice, membro del social market, vuole organizzare una festa per tutti i volonta
 ```sql
 SELECT CF
 FROM Volontario
-WHERE dataNascita > '1997-1-1'
+WHERE dataNascita > '1997-1-1';
 ```
 
 Marco, organizzatore del social market, necessita di sapere quali clienti hanno saldo "critico" (minore di 10 punti) e hanno nuclei familiari con almeno due elementi in una delle fasce "sensibili" (minori di 16 anni o maggiori di 64 anni).
@@ -27,7 +27,7 @@ Marco, organizzatore del social market, necessita di sapere quali clienti hanno 
 ```sql
 SELECT codCli
 FROM CARTA_CLIENTE
-WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2)
+WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 ```
 
 Anna, vuole sapere i punti totali spesi dai clienti dopo l'inizio di Maggio per prodotti non deperibili
@@ -35,7 +35,7 @@ Anna, vuole sapere i punti totali spesi dai clienti dopo l'inizio di Maggio per 
 ```sql
 SELECT SUM(costoPunti)
 FROM Prodotto NATURAL JOIN Appuntamento  NATURAL JOIN Inventario
-WHERE scadenza is NULL and dataOra >= '2022-5-1'
+WHERE scadenza is NULL and dataOra >= '2022-5-1';
 ```
 
 
@@ -56,20 +56,7 @@ WHERE scadenza is NULL and dataOra >= '2022-5-1'
 
 ## **Descrizione transazione (10)**
 
-Un ente, che conosce il suo *nome e indirizzo* (chiave alternativa per ENTE) , deve incrementare di 10 punti l'autorizzazione  per il cliente con un determinato  , per far ciò:
-
-- trova il suo codEnte (lettura ENTE)
-- trova il codCli del cliente considerato (lettura da CARTA_CLIENTE)
-- avendo ora codEnte e codCli modifica l'autorizzazione del cliente impostando puntiMensili ai puntiMensili precedenti e dataInzio come data odierna (scrittura su AUTORIZZA)
-
-| Tempo | Operazione          |
-| ----- | ------------------- |
-| 0     | BEGIN               |
-| 1     | READ(ENTE)          |
-| 2     | READ(CARTA_CLIENTE) |
-| 3     | READ(AUTORIZZA)     |
-| 4     | WRITE(AUTORIZZA)    |
-| 5     | COMMIT              |
+Il social market organizza una giornata della condivisione dove i clienti possono donare punt
 
 
 
