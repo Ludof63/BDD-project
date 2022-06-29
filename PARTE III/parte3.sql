@@ -19,20 +19,29 @@ WHERE scadenza is NULL and dataOra >= '2022-5-1';
 
 
 
+
 --B: transazione
 --i valori nelle variabili sono per test
 BEGIN TRANSACTION;
-
 DO $$
-DECLARE spesa int = 10;
-DECLARE fam char(17) = 'CFGPNF43D13L730U' ;
+DECLARE  enteCod int;
+DECLARE  cliCod  int;
+DECLARE  nomeEnte varchar := 'Nibali, Ginese e Trupiano SPA'; 
+DECLARE  indirizzoEnte varchar := 'Incrocio Fabrizia, 99 Piano 8 42024, Castelnovo Di Sotto (RE)';
+DECLARE cliente char(17) := 'PJBBKX81R05M263F ';
 BEGIN
-    INSERT INTO Appuntamento (dataOra,saldoInizio, saldoFine, cf, codCli)
-    SELECT current_date, saldo , saldo -spesa, fam, codCli
-    FROM Familiare NATURAL JOIN Carta_CLiente
-    WHERE CF = fam;
+        SELECT E.codEnte INTO enteCod
+        FROM Ente E
+        WHERE E.nome = nomeEnte and E.indirizzo = indirizzoEnte;
+        
+        SELECT C.codCli INTO cliCod
+        FROM Carta_Cliente C
+        WHERE C.titolare = cliente;
+        
+        UPDATE Autorizza
+        SET dataInizio = current_date
+        WHERE codEnte = enteCod and codCli = cliCod;
 END$$;
-
 COMMIT;
 
 
