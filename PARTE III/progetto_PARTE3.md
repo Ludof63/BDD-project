@@ -56,7 +56,39 @@ WHERE scadenza is NULL and dataOra >= '2022-5-1';
 
 ## **Descrizione transazione (10)**
 
-Il social market organizza una giornata della condivisione dove i clienti possono donare punt
+Un' ente vuole rinnovare l'autorizzazione per un determinato titolare *cliente* , e conosce il suo indirizzo, *indirizzoEnte*,  e il suo nome *indirizzoNome* ( che sono chiave univoca in ente), la transazione che implementa questa operazione deve effettuare:
+
+- una lettura da ENTE per determinare codEnte dell'ente
+- una lettura da CARTA_CLIENTE per determinare il codCli della tessera del cliente
+- una scrittura (update) su AUTORIZZA per impostare la data dell'autorizzazione  alla data odierna per la tupla con  codEnte e codCli come chiave 
+
+Il corrispondente codice SQL per la transazione è:
+
+```sql
+BEGIN TRANSACTION;
+DO $$
+DECLARE  enteCod int;
+DECLARE  cliCod  int;
+DECLARE  nomeEnte varchar := 'Nibali, Ginese e Trupiano SPA'; 
+DECLARE  indirizzoEnte varchar := 'Incrocio Fabrizia, 99 Piano 8 42024, Castelnovo Di Sotto (RE)';
+DECLARE cliente char(17) := 'PJBBKX81R05M263F ';
+BEGIN
+        SELECT E.codEnte INTO enteCod
+        FROM Ente E
+        WHERE E.nome = nomeEnte and E.indirizzo = indirizzoEnte;
+        
+        SELECT C.codCli INTO cliCod
+        FROM Carta_Cliente C
+        WHERE C.titolare = cliente;
+        
+        UPDATE Autorizza
+        SET dataInizio = current_date
+        WHERE codEnte = enteCod and codCli = cliCod;
+END$$;
+COMMIT;
+```
+
+
 
 
 
