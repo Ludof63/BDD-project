@@ -1,18 +1,26 @@
 set search_path to socialMarket;
 
 
---A:
+-- A:
 
+-- Query_1
 SELECT CF
 FROM Volontario
 WHERE dataNascita > '1997-1-1';
 
 
+
+
+
+
+-- Query_2
 SELECT codCli
 FROM CARTA_CLIENTE
 WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 
 
+
+--Query_3
 SELECT SUM(costoPunti)
 FROM Prodotto NATURAL JOIN Appuntamento  NATURAL JOIN Inventario
 WHERE scadenza is NULL and dataOra >= '2022-5-1';
@@ -20,9 +28,9 @@ WHERE scadenza is NULL and dataOra >= '2022-5-1';
 
 
 
---B: transazione
+-- B: transazione
 -- utilizzare auto rollback on error
---i valori nelle variabili sono per test
+-- i valori nelle variabili sono per test
 BEGIN TRANSACTION;
 DO $$
 DECLARE  enteCod int;
@@ -47,7 +55,7 @@ COMMIT;
 
 
 
---C: controllo dell'accesso
+-- C: controllo dell'accesso
 
 --ALICE gestore del social market
 CREATE USER Alice password 'Alice';
@@ -56,7 +64,7 @@ GRANT USAGE ON SCHEMA socialmarket TO Alice WITH GRANT OPTION;
 GRANT ALL PRIVILEGES ON SCHEMA socialmarket to Alice WITH GRANT OPTION;
 
 
---ROBERTO: volontario del social market
+-- ROBERTO: volontario del social market
 INSERT INTO volontario  VALUES ('PGNRRT75D01H703D', 'Roberto', 'Paganini', '1975-04-01', 'Salerno', '333333333333', 'M', 'Wagon' , 'ricezione , supervisione , trasporto', 'Mercoledì mattina ');
 CREATE USER Roberto PASSWORD 'roberto';
 
@@ -98,9 +106,9 @@ GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurn
 
 
 
-SELECT N.oid, N.nspname, C.relname, C.relfilenode, C.relpages, C.reltuples
+SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
 FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','prodotto', 'inventario','','carta_cliente');
+WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente');
 
 
 

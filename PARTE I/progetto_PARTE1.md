@@ -249,6 +249,8 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | V16          | MERCE - include - TRASPORTO                                  | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
 | V17          | RICEZIONE - riceve_trasporto - TRASPORTO                     | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInizio <= riceveInizio |
 | V18          | PRODOTTO - INVENTARIO - SCARICO - scarta - di_tipo  - acquista - APPUNTAMENTO | La quantità di un prodotto p in inventario deve essere il numero di unità (in prodotto) in relazione di_tipo con p e non acquistai e non scartati |
+| v19          | CARTA_CLIENTE - autorizza - APPUNTAMENTO - riferita          | Il saldo a current_date in CARTA_CLIENTE deve corrispondere alla differenza tra PuntiMensili dell'autorizzazione della CARTA_CLIENTE e la somma delle differenze tra saldoInizio  e saldoFine degli appuntamenti in relazione riferita con la CARTA_CLIENTE, in particolare dovrà essere uguale al saldoFine dell'appuntamento in relazione con la CARTA_CLIENTE per cui la data è la più vicina a current_date |
+| v20          | CARTA_CLIENTE - nel_nucleo - FAMILIARE                       | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in fasce d'età |
 
 ### Gerarchie (d)
 
@@ -314,14 +316,15 @@ Riportiamo solo le tabelle dei domini di relazioni di cui abbiamo modificato att
 
 Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturazione 
 
-| Nome Vincolo | Entità - associazioni coinvolte | Vincolo                                                      |
-| ------------ | ------------------------------- | ------------------------------------------------------------ |
-| V15          | DONAZIONE                       | una  donazione che è stata donata non può essere stata comprata e viceversa, quindi una donata può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
-| V16          | DONAZIONE                       | una donazione in denaro (importo is not null) non può essere trasportata |
-| V17          | DONAZIONE- include - TRASPORTO  | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio |
-| V19          | DONAZIONE - compra - dona       | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
-| V20          | DONAZIONE                       | una donazione in denaro non può essere trasportata           |
-| V21          | TURNO                           | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
+| Nome Vincolo | Entità - associazioni coinvolte        | Vincolo                                                      |
+| ------------ | -------------------------------------- | ------------------------------------------------------------ |
+| V15          | DONAZIONE                              | una  donazione che è stata donata non può essere stata comprata e viceversa, quindi una donata può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
+| V16          | DONAZIONE- include - TRASPORTO         | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
+| v20          | CARTA_CLIENTE - nel_nucleo - FAMILIARE | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in età_<16, età_ 16-64, età_>64 |
+| V21          | DONAZIONE - compra - dona              | int (positivo)Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
+| V22          | DONAZIONE                              | una donazione in denaro non può essere trasportata           |
+| V23          | TURNO                                  | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
+| V24          | DONAZIONE                              | una donazione in denaro (importo is not null) non può essere trasportata |
 
 
 
