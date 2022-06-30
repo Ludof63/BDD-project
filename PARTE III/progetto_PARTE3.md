@@ -36,12 +36,12 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 
 #### Query_3
 
-Anna, vuole sapere i punti totali spesi dai clienti dopo l'inizio di Maggio per prodotti non deperibili
+Anna  è interessata in questo momento a contattare tutti donatori che hanno effettuato almeno una donazione in prodotti
 
 ```sql
-SELECT SUM(costoPunti)
-FROM Prodotto NATURAL JOIN Inventario
-WHERE scadenza is NULL and dataOra >= '2022-5-1';
+SELECT SUM(importo)
+FROM Donazione NATURAL JOIN Donatore 
+WHERE importo is not NULL and cognome is null;
 ```
 
 ### Progetto fisico (b)
@@ -64,7 +64,7 @@ Per la seconda query del carico di lavoro scelto, abbiamo scelto di creare a suo
 
 #### Query_3
 
-Per la terza query delcarico di lavoro
+Per la terza 
 
 ### Tuple e dimensioni dei blocchi (c)
 

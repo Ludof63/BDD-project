@@ -26,7 +26,7 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 - Utilizziamo l'entità SPESA per memorizzare le spese, ovvero l'utilizzo di denaro donato. 
 - Abbiamo interpretato la ricezione di un gruppo di prodotti , attraverso la ricezione di uno o più traposrti (contiene una o più merci (gruppi di prodotti)) come il lavoro svolto da uno o più volontari per organizzare i prodotti nel magazzino, un trasporto deve essere ricevuto in una certa data-ora
 - Per la data aggiuntiva di scadenza per i prodotti che deperibili che la memorizzano la intendiamo in numero di mesi aggiuntivi alla scadenza
-- Lo scarico dei prodotti può avvenire una volta per giorno, quindi data identifica lo scarico
+- Lo scarico dei prodotti può avvenire una volta per giorno al massimo, e riteniamo opportuno memorizzare almeno la quantità di prodotti scaricati per tipo di prodotto perché lo riteniamo essere un'informazione importante per la futura organizzazione del market (abbiamo scelto questa mediazione di efficienza/informazione) , lo scarico è quindi identificato da una data e da un prodotto
 - Memorizziamo i turni dei dipendenti in slot di tempo collegati a uno specifico volontario il lavoro che svolge lo deduciamo poi dalle diverse associazioni con i diversi lavori (trasporta - riceve - supervisiona), ***un volontario non può avere turni che si sovrappongono*** in termini intervalli di tempo, e ***un volontario può svolgere in un turno al massimo un'attività per ogni tipo di attività*** (quindi massimo tre attività (diverse))
   - *In caso un volontario dovesse eseguire attività dello stesso tipo in orari successivi si registrano turni successivi*
 
@@ -56,10 +56,10 @@ Abbiamo interpretato il dominio fornitoci nel seguente modo:
 - **PRODOTTO** è il singolo prodotto presente nel market inteso come singola unità
 - **INVENTARIO** rappresenta una collezione dello stesso "tipo di prodotto", contiene infatti quantità e ha attributi comuni a tutti i prodotti di quel "tipo", la scandeza aggiuntiva è intesa come la durata in mesi aggiuntiva alla scadenza (di un'unità)
 - **DONAZIONE** è una donazione avvenuta che avviene in una data e ora e può essere in *MERCE* o *DENARO*
-- **DONATORE** è un donatore del market che ha effettuato almeno una donazione e può essere un **AZIENDA** (inteso anche come esercizio commerciale) o un **PRIVATO**
+- **DONATORE** è un donatore del market che ha effettuato almeno una donazione e può essere un **AZIENDA** (inteso anche come esercizio commerciale) o un **PRIVATO** , il privato ha codiceFiscale CF  mentre l'azienda ha partita iva che identifichiamo comunque con CF
 - **DENARO** rappresenta una donazione in denaro, caratterizzata da un importo
 - **MERCE** è un insieme di prodotti che può essere donato da un donatore o acquista attraverso una spesa dal market, esso viene trasportato da uno o più volontari e ricevuto da uno o più volontari(organizzato nel market)
-- **SCARICO** rappresenta uno scarico di prodotti avvenuto in una certa data
+- **SCARICO** rappresenta uno scarico di un certo tipo di prodotti (la quantità) avvenuto in una certa data
 - **SPESA** è un importo di denaro (raccolto dalle donazioni in denaro) per acquistare merce (prodotti) o per spese di gestione (se non è in relazione con merce)
 
 #### Identificatori aggiuntivi
@@ -176,7 +176,7 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | :----------------- | :------------- |
 | codProdotto        | int            |
 | quantità           | int (positivo) |
-| tipo               | string         |
+| tipoProdotto       | string         |
 | nomeProdotto       | string         |
 | costoPunti         | int (positivo) |
 | scadenzaAggiuntiva | int (positivo) |
@@ -203,9 +203,10 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 **SCARICO**:
 
-| Attributo   | Dominio |
-| :---------- | :------ |
-| dataScarico | date    |
+| Attributo   | Dominio            |
+| :---------- | :----------------- |
+| dataScarico | date               |
+| quantità    | int (positivo, >0) |
 
 **AZIENDA**:
 
@@ -243,14 +244,13 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | V10          | TURNO - riceve - supervisiona - trasporta - TRASPORTO - APPUNTAMENTO - RICEZIONE | Per un turno non ci devono essere attività (svolte da volontario interessato) contemporanee ovvero sovrapposte temporalemente |
 | V11          | RICEZIONE                                                    | *riceveInizio <= riceveFine*                                 |
 | V12          | TRASPORTO                                                    | *trasportoInizio <= trasportoFine*                           |
-| V13          | PRODOTTO                                                     | un prodotto se è in relazione con uno *scarico* (*scarta*) non può essere in relazione con un *appuntamento* (*acquista*) e viceversa |
+| V13          | CARTA_CLIENTE - nel_nucleo - FAMILIARE                       | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in fasce d'età |
 | V14          | DENARO - SPESA                                               | la somma degli importi in *SPESA* è minore uguale alla somma degli importi di *DENARO* |
 | V15          | MERCE                                                        | una  merce che è stata donata non può essere stata comprata e viceversa, quindi una merce può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
 | V16          | MERCE - include - TRASPORTO                                  | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
 | V17          | RICEZIONE - riceve_trasporto - TRASPORTO                     | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInizio <= riceveInizio |
-| V18          | PRODOTTO - INVENTARIO - SCARICO - scarta - di_tipo  - acquista - APPUNTAMENTO | La quantità di un prodotto p in inventario deve essere il numero di unità (in prodotto) in relazione di_tipo con p e non acquistai e non scartati |
-| v19          | CARTA_CLIENTE - autorizza - APPUNTAMENTO - riferita          | Il saldo a current_date in CARTA_CLIENTE deve corrispondere alla differenza tra PuntiMensili dell'autorizzazione della CARTA_CLIENTE e la somma delle differenze tra saldoInizio  e saldoFine degli appuntamenti in relazione riferita con la CARTA_CLIENTE, in particolare dovrà essere uguale al saldoFine dell'appuntamento in relazione con la CARTA_CLIENTE per cui la data è la più vicina a current_date |
-| v20          | CARTA_CLIENTE - nel_nucleo - FAMILIARE                       | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in fasce d'età |
+| V18          | PRODOTTO - INVENTARIO - di_tipo  - acquista - APPUNTAMENTO   | La quantità di un prodotto p in inventario deve essere il numero di unità (in prodotto) in relazione di_tipo con p non acquistati |
+| V19          | CARTA_CLIENTE - autorizza - APPUNTAMENTO - riferita          | Il saldo a current_date in CARTA_CLIENTE deve corrispondere alla differenza tra PuntiMensili dell'autorizzazione della CARTA_CLIENTE e la somma delle differenze tra saldoInizio  e saldoFine degli appuntamenti in relazione riferita con la CARTA_CLIENTE, in particolare dovrà essere uguale al saldoFine dell'appuntamento in relazione con la CARTA_CLIENTE per cui la data è la più vicina a current_date |
 
 ### Gerarchie (d)
 
@@ -318,13 +318,12 @@ Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturaz
 
 | Nome Vincolo | Entità - associazioni coinvolte        | Vincolo                                                      |
 | ------------ | -------------------------------------- | ------------------------------------------------------------ |
+| V13          | CARTA_CLIENTE - nel_nucleo - FAMILIARE | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in età_<16, età_ 16-64, età_>64 |
 | V15          | DONAZIONE                              | una  donazione che è stata donata non può essere stata comprata e viceversa, quindi una donata può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
 | V16          | DONAZIONE- include - TRASPORTO         | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
-| v20          | CARTA_CLIENTE - nel_nucleo - FAMILIARE | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in età_<16, età_ 16-64, età_>64 |
-| V21          | DONAZIONE - compra - dona              | int (positivo)Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
-| V22          | DONAZIONE                              | una donazione in denaro non può essere trasportata           |
-| V23          | TURNO                                  | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
-| V24          | DONAZIONE                              | una donazione in denaro (importo is not null) non può essere trasportata |
+| V20          | DONAZIONE - compra - dona              | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
+| V21          | DONAZIONE                              | una donazione in denaro non può essere trasportata           |
+| V22          | TURNO                                  | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
 
 
 
@@ -402,7 +401,7 @@ Per come abbiamo interpretato il dominio, per ogni relazione cerchiamo le dipend
     - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
 - **PRODOTTO:**
   - Dipendenze funzionali:
-    - $codUnità \rightarrow scadenza\; dataOra\; codProdotto\; dataScarico\; codDonazione\;$
+    - $codUnità \rightarrow scadenza\; dataOra\; codProdotto\; codDonazione\;$
   - Chiavi e conclusioni:
     - Le chiave della relazione *PRODOTTO* è quindi *{codUnità}*
     - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
@@ -424,6 +423,12 @@ Per come abbiamo interpretato il dominio, per ogni relazione cerchiamo le dipend
     - $CF \rightarrow telefono\; nome\; cognome$
   - Chiavi e conclusioni:
     - Le chiave della relazione *DONAZIONE* è quindi *{CF}*
+    - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
+- **SCARICO:**
+  - Dipendenze funzionali:
+    - $dataScarico\; codProdotto \rightarrow quantità$
+  - Chiavi e conclusioni:
+    - Le chiave della relazione SCARICO è quindi *{dataScarico, codProdotto}*
     - La relazione è in *BCNF* poiché  la dipendenza funzionale presenta a sinistra la chiave della relazione
 - **SPESA:**
   - Dipendenze funzionali:

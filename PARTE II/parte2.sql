@@ -48,24 +48,23 @@ WHERE codCli NOT IN(
 
 
 --C.B:
-SELECT tipo
+SELECT tipoProdotto
 FROM Prodotto NATURAL JOIN Inventario NATURAL JOIN Appuntamento
 WHERE Appuntamento.dataOra >(current_date - INTERVAL '12 months')
-GROUP BY(tipo) 
+GROUP BY(tipoProdotto) 
 HAVING COUNT(DISTINCT codCli) =
                     (SELECT COUNT(*)
                      FROM Carta_Cliente);
 
 
 --C.C:
-SELECT codProdotto
-FROM Prodotto NATURAL JOIN Scarico NATURAL JOIN INVENTARIO I
-GROUP BY(codProdotto,tipo)
-HAVING COUNT(codUnità) >
-            (SELECT COUNT(codUnità)/COUNT(DISTINCT codProdotto)
-            FROM Prodotto NATURAL JOIN Scarico NATURAL JOIN INVENTARIO
-            WHERE tipo = I.tipo);
-
+SELECT I.codProdotto
+FROM Scarico JOIN INVENTARIO I ON Scarico.codProdotto = I.codProdotto
+GROUP BY (I.codProdotto, I.tipoProdotto)
+HAVING COUNT(Scarico.quantità) >
+            (SELECT COUNT(Scarico.quantità)/ COUNT(DISTINCT Scarico.codProdotto)
+            FROM Scarico JOIN INVENTARIO ON Scarico.codProdotto = Inventario.codProdotto
+            WHERE tipoProdotto = I.tipoProdotto);
 
 
 
@@ -76,39 +75,35 @@ HAVING COUNT(codUnità) >
 --D.A:
 CREATE OR REPLACE PROCEDURE doScarico() AS
 $$
+DECLARE 
+temprow record;
 BEGIN
-    PERFORM(
-    SELECT *
-    FROM Scarico
-    WHERE dataScarico = current_date);
-    
-    IF((SELECT COUNT(*)
-    FROM Scarico
-    WHERE dataScarico = current_date)= 0)
-    THEN
-        INSERT INTO Scarico VALUES (current_date);   
-    END IF;
-  
-    UPDATE Prodotto
-    SET dataScarico = current_date
-    FROM Inventario
-    WHERE Prodotto.codProdotto = Inventario.codProdotto  and
-    scadenza is not null  and dataOra is null and dataScarico is null 
-    and (scadenzaAggiuntiva is null or  scadenza + interval '1 month' * scadenzaAggiuntiva < current_date) ;  
+    FOR temprow IN
+        SELECT codProdotto as codP, COUNT(codUnità) as quantità
+        FROM Prodotto NATURAL JOIN Inventario
+        WHERE scadenza is not null  and dataOra is null 
+        and (scadenzaAggiuntiva is null or  scadenza + interval '1 month' * scadenzaAggiuntiva < current_date)
+        GROUP BY (codProdotto)
+    LOOP
+        INSERT INTO Scarico VALUES(current_date, temprow.codP, temprow.quantità);
+    END LOOP;
+      
+    DELETE 
+    FROM Prodotto
+    WHERE codUnità IN (
+        SELECT codUnità
+        FROM Prodotto NATURAL JOIN Inventario
+        WHERE scadenza is not null  and dataOra is null 
+        and (scadenzaAggiuntiva is null or  scadenza + interval '1 month' * scadenzaAggiuntiva < current_date));
 END;
 $$ LANGUAGE plpgsql;
 
 
-SELECT codUnità
-FROM Inventario NATURAL JOIN Prodotto
-WHERE scadenza is not null  and dataOra is null
-and dataScarico is null and (scadenzaAggiuntiva is null or  scadenza + interval '1 month' * scadenzaAggiuntiva < current_date) ;
-CALL doScarico();
-
+--Test
+--CALL doScarico();
 
 
 --D.B:
-DROP FUNCTION turniInData
 CREATE OR REPLACE FUNCTION turniInData(volontarioCF CHAR (17), startDate DATE, endDate DATE ) 
 RETURNS TABLE (inizioDelTurno timeStamp)
 AS
@@ -306,7 +301,7 @@ EXECUTE FUNCTION checkTurniFun();
 CREATE OR REPLACE FUNCTION funIncr() RETURNS trigger AS
 $$
 BEGIN
-    IF (NEW.dataOra is null AND NEW.dataScarico is null) 
+    IF (NEW.dataOra is null) 
     THEN
         UPDATE Inventario
         SET quantità = quantità+1
@@ -325,7 +320,7 @@ EXECUTE FUNCTION funIncr();
 CREATE OR REPLACE FUNCTION funDecr() RETURNS trigger AS
 $$
 BEGIN
-    IF (OLD.dataOra is null AND OLD.dataScarico is null)
+    IF (OLD.dataOra is null)
     THEN
         UPDATE Inventario
         SET quantità = quantità-1
@@ -344,7 +339,7 @@ EXECUTE FUNCTION funDecr();
 CREATE OR REPLACE FUNCTION funUpdateQnt() RETURNS trigger AS
 $$
 BEGIN
-    IF(NEW.codProdotto <> OLD.codProdotto and (NEW.dataOra is null AND NEW.dataScarico is null))
+    IF(NEW.codProdotto <> OLD.codProdotto and (NEW.dataOra is null ))
     THEN
         UPDATE Inventario
 	    SET quantità = quantità-1
@@ -354,7 +349,7 @@ BEGIN
         SET quantità = quantità+1
         WHERE codProdotto = NEW.codProdotto;
     END IF;
-    IF( (OLD.dataOra is null AND OLD.dataScarico is null) and (NEW.dataOra is not null OR NEW.dataScarico is not null) )
+    IF( (OLD.dataOra is null) and (NEW.dataOra is not null) )
     THEN
         UPDATE Inventario
 	    SET quantità = quantità-1
@@ -372,6 +367,8 @@ AFTER UPDATE ON Prodotto
 FOR EACH ROW
 EXECUTE FUNCTION funUpdateQnt();
 --FINE TRIGGER B
+
+
 
 
 

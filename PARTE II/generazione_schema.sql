@@ -79,7 +79,7 @@ CHECK(riceveInizio <= riceveFine)
 CREATE TABLE Inventario(
 codProdotto int PRIMARY KEY,
 quantità integer NOT NULL CHECK(quantità >= 0),
-tipo varchar(20) NOT NULL,
+tipoProdotto varchar(20) NOT NULL,
 nomeProdotto varchar(20) NOT NULL,
 costoPunti integer NOT NULL CHECK(costoPunti >= 0),
 scadenzaAggiuntiva integer,
@@ -88,7 +88,10 @@ UNIQUE(nomeProdotto)
 
 -- SCARICO
 CREATE TABLE Scarico(
-dataScarico date PRIMARY KEY
+dataScarico date,
+codProdotto int REFERENCES Inventario (codProdotto) ON UPDATE CASCADE,
+quantità int NOT NULL CHECK(quantità > 0),
+PRIMARY KEY(dataScarico, codProdotto)
 );
 
 -- DONATORE
@@ -164,6 +167,7 @@ importo decimal(8,2),
 codTrasporto int REFERENCES Trasporto (codTrasporto),
 cf char(17) REFERENCES Donatore (CF) ON UPDATE CASCADE,  
 codSpesa int REFERENCES Spesa (codSpesa) ON UPDATE CASCADE,
+
 CHECK (
     ((cf is null) and (codSpesa is not null))
     OR
@@ -182,15 +186,7 @@ codUnità int PRIMARY KEY,
 scadenza date,
 dataOra timestamp REFERENCES Appuntamento (dataOra) ON UPDATE CASCADE,
 codProdotto int REFERENCES Inventario (codProdotto) ON UPDATE CASCADE NOT NULL,
-dataScarico date REFERENCES Scarico (dataScarico) ON UPDATE CASCADE,
-codDonazione int REFERENCES Donazione (codDonazione) ON UPDATE CASCADE NOT NULL,
-CHECK (
-    ((dataOra is null) and (dataScarico is not null))
-    OR
-    ((dataOra is not null) and (dataScarico is null))
-    OR 
-    ((dataOra is null) and (dataScarico is null)))
-
+codDonazione int REFERENCES Donazione (codDonazione) ON UPDATE CASCADE NOT NULL
 );
 
 
