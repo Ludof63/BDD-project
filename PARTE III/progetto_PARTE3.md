@@ -16,7 +16,7 @@
 
 #### Query_1
 
-Alice, membro del social market, vuole organizzare una festa per tutti i volontari che hanno meno di 25 anni
+Alice, membro del social market, frequentemente organizza feste per  i volontari per fasce d'età (in questo caso che hanno meno di 25 anni)
 
 ```sql
 SELECT CF
@@ -36,7 +36,7 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 
 #### Query_3
 
-Anna  è interessata in questo momento a contattare tutti donatori che hanno effettuato almeno una donazione in prodotti
+Anna che si occupa della contabilità del social market è spesso interessata a capire l'importo di denaro donato dalle aziende.
 
 ```sql
 SELECT SUM(importo)
@@ -64,13 +64,21 @@ Per la seconda query del carico di lavoro scelto, abbiamo scelto di creare a suo
 
 #### Query_3
 
-Per la terza 
+Per la terza query del carico di lavoro scelto, abbiamo scelto di creare un indice
 
 ### Tuple e dimensioni dei blocchi (c)
 
 
 
 ### Descrizione piani di esecuzione (d)
+
+#### Query_1
+
+##### Prima
+
+
+
+##### Dopo
 
 
 
@@ -136,13 +144,7 @@ GRANT ALL PRIVILEGES ON SCHEMA socialmarket to Alice WITH GRANT OPTION;
 
 #### Roberto
 
-Roberto è un volontario del social market, è un volontario esperto e quindi è capace di gestire l'inserimento delle attività in cui partecipa, quindi per come abbiamo interpretato lo schema dovrà avere essere in grado di:
-
-- visualizzare e poter modificare i propri turni, modificare per poter inserire attività da lui svolte nel turno
-- inserire attività di tipo ricezione, trasporto, appuntamento, per poi successivamente
-- visualizzare carta_cliente, familiare, donazione per raccogliere i dati da utilizzare nei sui inserimenti
-- visualizzare e modificare i prodotti, per segnare i prodotti comprati in un appuntamento e i prodotti scaricati in uno scarico
-- inserire uno scarico 
+Roberto è un volontario del social market, 
 
 ```
 

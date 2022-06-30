@@ -4,13 +4,34 @@ set search_path to socialMarket;
 -- A:
 
 -- Query_1
-SELECT CF
+
+CREATE INDEX idx_ord_dataNascita 
+ON Volontario (dataNascita);
+
+CLUSTER Volontario
+USING idx_ord_dataNascita;
+
+EXPLAIN ANALYZE SELECT CF
 FROM Volontario
 WHERE dataNascita > '1997-1-1';
 
 
+--PRIMA
+"Seq Scan on volontario  (cost=0.00..94.50 rows=502 width=18) (actual time=0.006..0.229 rows=502 loops=1)"
+"  Filter: (datanascita > '1997-01-01'::date)"
+"  Rows Removed by Filter: 2498"
+"Planning Time: 0.033 ms"
+"Execution Time: 0.247 ms"
 
 
+--DOPO
+"Bitmap Heap Scan on volontario  (cost=12.17..75.45 rows=502 width=18) (actual time=0.051..0.111 rows=502 loops=1)"
+"  Recheck Cond: (datanascita > '1997-01-01'::date)"
+"  Heap Blocks: exact=10"
+"  ->  Bitmap Index Scan on idx_ord_datanascita  (cost=0.00..12.04 rows=502 width=0) (actual time=0.045..0.045 rows=502 loops=1)"
+"        Index Cond: (datanascita > '1997-01-01'::date)"
+"Planning Time: 0.146 ms"
+"Execution Time: 0.132 ms"
 
 
 -- Query_2
@@ -21,12 +42,18 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 
 
 --Query_3
-SELECT SUM(costoPunti)
-FROM Prodotto NATURAL JOIN Appuntamento  NATURAL JOIN Inventario
-WHERE scadenza is NULL and dataOra >= '2022-5-1';
+
+EXPLAIN ANALYZE SELECT SUM(importo)
+FROM Donazione NATURAL JOIN Donatore 
+WHERE importo is not NULL and cognome is null;
 
 
+CREATE INDEX idx_ord_donatore_cognome
+ON Donatore (cognome);
 
+CREATE INDEX idx_hash_donatore_cognome ON Donatore USING HASH (cognome);
+CLUSTER Donatore
+USING idx_ord_donatore_cognome;
 
 -- B: transazione
 -- utilizzare auto rollback on error
@@ -108,7 +135,7 @@ GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurn
 
 SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
 FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente');
+WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 'donazione' , 'donatore');
 
 
 
