@@ -55,6 +55,13 @@ CREATE INDEX idx_hash_donatore_cognome ON Donatore USING HASH (cognome);
 CLUSTER Donatore
 USING idx_ord_donatore_cognome;
 
+
+
+
+
+
+
+
 -- B: transazione
 -- utilizzare auto rollback on error
 -- i valori nelle variabili sono per test
@@ -97,12 +104,6 @@ CREATE USER Roberto PASSWORD 'roberto';
 
 GRANT USAGE ON SCHEMA socialMarket TO roberto;
 
--- permesoo di leggere e modificare su prodotto
-GRANT SELECT,UPDATE ON prodotto TO roberto;
-
--- permesso di inserire in scarico
-GRANT INSERT ON scarico TO roberto;
-
 -- permesso di leggere tutti i suoi turni, appuntamenti, trasporto, ricezione
 CREATE VIEW turniCF AS
 SELECT *
@@ -126,7 +127,11 @@ WHERE codRiceve = (SELECT codRiceve FROM turniCF);
 
 GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurniCF TO roberto;
 
+-- permesso di leggere e modificare su prodotto
+GRANT SELECT,DELETE ON prodotto TO roberto;
 
+-- permesso di inserire in scarico
+GRANT INSERT ON scarico TO roberto;
 
 
 

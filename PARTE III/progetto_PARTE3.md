@@ -26,7 +26,7 @@ WHERE dataNascita > '1997-1-1';
 
 #### Query_2
 
-Marco, organizzatore del social market, necessita di sapere quali clienti hanno saldo "critico" (minore di 10 punti) e hanno nuclei familiari con almeno due elementi in una delle fasce "sensibili" (minori di 16 anni o maggiori di 64 anni).
+Marco, organizzatore del social market, spesso necessita di sapere quali clienti hanno saldo "critico" (minore di 10 punti) e hanno nuclei familiari con almeno due elementi in una delle fasce "sensibili" (minori di 16 anni o maggiori di 64 anni).
 
 ```sql
 SELECT codCli
@@ -51,7 +51,11 @@ WHERE importo is not NULL and cognome is null;
 Per la prima query del carico di lavoro scelto,  scegliamo di creare a suo supporto un indice ordinato clusterizzato (secondario) ad albero sull'attributo dataNascita della tabella VOLONTARIO, questo ci permetterà di effettuare una selezione di tipo range sull'attributo in modo più efficiente, lo creiamo clusterizzato perché per il nostro carico di lavoro è necessario creare su volontario un solo indice.
 
 ```sql
+CREATE INDEX idx_ord_dataNascita 
+ON Volontario (dataNascita);
 
+CLUSTER Volontario
+USING idx_ord_dataNascita;
 ```
 
 #### Query_2
@@ -66,7 +70,19 @@ Per la seconda query del carico di lavoro scelto, abbiamo scelto di creare a suo
 
 Per la terza query del carico di lavoro scelto, abbiamo scelto di creare un indice
 
-### Tuple e dimensioni dei blocchi (c)
+```sql
+
+```
+
+
+
+### Dimensioni tabelle coinvolte (c)
+
+```sql
+SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
+FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
+WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 'donazione' , 'donatore');
+```
 
 
 
@@ -79,6 +95,10 @@ Per la terza query del carico di lavoro scelto, abbiamo scelto di creare un indi
 
 
 ##### Dopo
+
+
+
+### 
 
 
 
@@ -117,7 +137,7 @@ END$$;
 COMMIT;
 ```
 
-Per questa transazione il livello di isolamento consigliato è il **READ COMMITED*** poiché non riteniamo di dover considerare anomalie di *phantom row* dato che le letture effettuate nella transazione coinvolgono singole tuple, riteniamo che acquisire i lock sulle intere tabelle sia eccessivo, inoltre anche le anomalie di *unreptable read* non ci interessano poiché non effettuiamo letture ripetute sulla stessa risorsa nel corso della transazione  
+Per questa transazione il livello di isolamento consigliato è il **READ COMMITED** poiché non riteniamo di dover considerare anomalie di *phantom row* dato che le letture effettuate nella transazione coinvolgono singole tuple, riteniamo che acquisire i lock sulle intere tabelle sia eccessivo, inoltre anche le anomalie di *unreptable read* non ci interessano poiché non effettuiamo letture ripetute sulla stessa risorsa nel corso della transazione  
 
 Il livello *REPETABLE READ* fa si che nella nostra transazione debbano essere acuisti i lock di scrittura (esclusivi) all'inizio e rilasciati al suo termine (COMMIT o ROLLBACK) mentre i lock condivisi (lettura) vengono acquisiti e rilasciati appena possibile, questo ci permette di evitare*:
 
@@ -144,9 +164,44 @@ GRANT ALL PRIVILEGES ON SCHEMA socialmarket to Alice WITH GRANT OPTION;
 
 #### Roberto
 
-Roberto è un volontario del social market, 
+Roberto è un *volontario del social market*,  e ha il permesso di visualizzare tutti i suoi turni e le attività da lui svolte, ma non può inserirle lui, pensiamo sia infatti compito dell'organizzazione preparare i turni. 
 
-```
+Roberto è un volontario che spesso di occupa dello scarico ha quindi l'autorità di eseguire uno scarico e quindi di registrare le quantità di prodotti scaricati, ma anche di rimuovere i prodotti scaricati dalla base di dati.
 
+```sql
+-- ROBERTO: volontario del social market
+INSERT INTO volontario  VALUES ('PGNRRT75D01H703D', 'Roberto', 'Paganini', '1975-04-01', 'Salerno', '333333333333', 'M', 'Wagon' , 'ricezione , supervisione , trasporto', 'Mercoledì mattina ');
+CREATE USER Roberto PASSWORD 'roberto';
+
+GRANT USAGE ON SCHEMA socialMarket TO roberto;
+
+-- permesso di leggere tutti i suoi turni, appuntamenti, trasporto, ricezione
+CREATE VIEW turniCF AS
+SELECT *
+FROM turno
+WHERE CF = 'PGNRRT75D01H703D';
+
+CREATE VIEW appuntamentoCF AS
+SELECT *
+FROM appuntamento
+WHERE dataora = (SELECT dataOra FROM turniCF);
+
+CREATE VIEW trasportoCF AS
+SELECT *
+FROM trasporto
+WHERE codTrasporto = (SELECT codTrasporto FROM turniCF);
+
+CREATE VIEW ricezioneCF AS
+SELECT *
+FROM ricezione
+WHERE codRiceve = (SELECT codRiceve FROM turniCF);
+
+GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurniCF TO roberto;
+
+-- permesso di leggere e modificare su prodotto
+GRANT SELECT,DELETE ON prodotto TO roberto;
+
+-- permesso di inserire in scarico
+GRANT INSERT ON scarico TO roberto;
 ```
 
