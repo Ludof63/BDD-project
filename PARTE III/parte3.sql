@@ -50,24 +50,32 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 
 
 --Query_3
+--prima
+EXPLAIN ANALYZE
+SELECT codUnità
+FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
+JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
+WHERE nCasse < 3 and Donazione.dataOra > '2022-06-01';
 
-EXPLAIN ANALYZE SELECT SUM(importo)
-FROM Donazione NATURAL JOIN Donatore 
-WHERE importo is not NULL and cognome is null;
+--creazione piano fisico per query_3
+CREATE INDEX idx_ord_ncasse_trasporto
+ON Trasporto (nCasse);
 
+CLUSTER Trasporto
+USING idx_ord_ncasse_trasporto;
 
-CREATE INDEX idx_ord_donatore_cognome
-ON Donatore (cognome);
+CREATE INDEX idx_ord_dataOra_Donazione
+ON Donazione (dataOra);
 
-CREATE INDEX idx_hash_donatore_cognome ON Donatore USING HASH (cognome);
-CLUSTER Donatore
-USING idx_ord_donatore_cognome;
+CLUSTER Donazione
+USING idx_ord_dataOra_Donazione;
 
-
-
-SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
-FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente');
+--dopo
+EXPLAIN ANALYZE
+SELECT codUnità
+FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
+JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
+WHERE nCasse < 3 and Donazione.dataOra > '2022-06-01';
 
 
 

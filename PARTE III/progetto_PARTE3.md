@@ -16,7 +16,7 @@
 
 #### Query_1
 
-Alice, membro del social market, frequentemente organizza feste per  i volontari per fasce d'età (in questo caso che hanno meno di 25 anni)
+Matilde, membro del social market, frequentemente organizza feste per  i volontari per fasce d'età (in questo caso che hanno meno di 25 anni)
 
 ```sql
 SELECT CF
@@ -36,12 +36,13 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 
 #### Query_3
 
-Anna che si occupa della contabilità del social market è spesso interessata a capire l'importo di denaro donato dalle aziende.
+Gino, organizzatore se social market si occupa della gestione dei prodotti ed è spesso interessato a capire quali prodotti del market sono arrivati a partire da una certa in donazioni con trasporti piccoli, ovvero trasporti con numero di casse minore di 3
 
 ```sql
-SELECT SUM(importo)
-FROM Donazione NATURAL JOIN Donatore 
-WHERE importo is not NULL and cognome is null;
+SELECT codUnità
+FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
+JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
+WHERE nCasse < 3 and Donazione.dataOra < '2022-06-01';
 ```
 
 ### Progetto fisico (b)
@@ -72,33 +73,48 @@ USING idx_ord_saldo_carta_cliente;
 
 #### Query_3
 
-Per la terza query del carico di lavoro scelto, abbiamo scelto di creare un indice
+Per la terza query del carico di lavoro scelto, abbiamo scelto di creare due indici clusterizzati uno per nCasse su trasporto e uno su dataOra per donazione poiché risultano utilizzi per un accesso più efficiente alle relazioni di base coinvolte nella query, in particolare abbiamo notato che non era conveniente provare ottimizzare il join, poiché il sistema esegue il join attraverso l' hash join che risulta comunque efficiente al pari o meglio del merge join.
 
 ```sql
+CREATE INDEX idx_ord_ncasse_trasporto
+ON Trasporto (nCasse);
 
+CLUSTER Trasporto
+USING idx_ord_ncasse_trasporto;
+
+CREATE INDEX idx_ord_dataOra_Donazione
+ON Donazione (dataOra);
+
+CLUSTER Donazione
+USING idx_ord_dataOra_Donazione;
 ```
-
-
 
 ### Dimensioni tabelle coinvolte (c)
 
 ```sql
-SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
-FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 'donazione' , 'donatore');
+SELECT codUnità
+FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
+JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
+WHERE nCasse < 3 and Donazione.dataOra > '2022-06-01';
 ```
-
+| relazione     | numeropagine | numerotuple |
+| ------------- | ------------ | ----------- |
+| carta_cliente | 42           | 5000        |
+| volontario    | 94           | 5000        |
+| trasporto     | 44           | 4000        |
+| donazione     | 46           | 5832        |
+| prodotto      | 42           | 7627        |
 
 
 ### Descrizione piani di esecuzione (d)
 
 #### Query_1
 
-| Prima                                                        | Dopo                                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](piano1A.svg)                                             | ![](piano1B.svg)                                             |
+| Prima                                                                                         | Dopo                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![](piano1A.svg)                                                                              | ![](piano1B.svg)                                                                                                                                                                   |
 | Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' | Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
-| Execution Time: 1.031 ms                                     | Execution Time: 0.196 ms                                     |
+| Execution Time: 1.031 ms                                                                      | Execution Time: 0.196 ms                                                                                                                                                           |
 
 **Commento:**
 
@@ -106,11 +122,25 @@ Come già accennato durante la scelta del piano fisico, la query che precedentem
 
 #### Query_2
 
-| Prima                                                        | Dopo                                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](piano2A.svg)                                             | ![](piano2B.svg)                                             |
+| Prima                                                                                            | Dopo                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![](piano2A.svg)                                                                                 | ![](piano2B.svg)                                                                                                                                                                                                                                                                                                                                     |
 | Viene utilizzata una scansione sequenziale con filtro la formula booleana coomplessa della query | Viene utilizzata una scansione con indice sull'indice clusterizzato da noi creato su saldo (fattore booloeano della query) di carta_cliente, viene utlizzata una bitmap index scan sulla condizione di saldo in combinazione con una successiva heap index scan che aggiunge il filtro della restante parte della condizione booleana (che è in and) |
-| Execution Time: 0.927 ms                                     | Execution Time: 0.117 ms                                     |
+| Execution Time: 0.927 ms                                                                         | Execution Time: 0.117 ms                                                                                                                                                                                                                                                                                                                             |
+
+**Commento:**
+
+Avendo creato un indice su il fattore booleano della query (saldo) il sistema utilizza una scansione con indice su di esso applicando poi successivamente il filtro per implementare la seconda parte della condizione booleana  in and, impiegando un tempo decisamente inferiore alla scansione sequenziale con filtro iniziale
+
+#### Query_3
+
+| Prima | Dopo  |
+| ----- | ----- |
+| ![]() | ![]() |
+|       |       |
+|       |       |
+
+**Commento:**
 
 
 
