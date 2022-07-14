@@ -57,7 +57,9 @@ USING idx_ord_donatore_cognome;
 
 
 
-
+SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
+FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
+WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 'donazione' , 'donatore');
 
 
 

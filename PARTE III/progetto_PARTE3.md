@@ -39,6 +39,12 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 Anna che si occupa della contabilità del social market è spesso interessata a capire l'importo di denaro donato dalle aziende.
 
 ```sql
+
+
+
+
+
+
 SELECT SUM(importo)
 FROM Donazione NATURAL JOIN Donatore 
 WHERE importo is not NULL and cognome is null;
@@ -90,15 +96,11 @@ WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 
 
 #### Query_1
 
-##### Prima
-
-
-
-##### Dopo
-
-
-
-### 
+| Prima                                                        | Dopo                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![](piano1A.svg)                                             | ![](piano1B.svg)                                             |
+| Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' | Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
+| Execution Time: 1.031 ms                                     | Execution Time: 0.196 ms                                     |
 
 
 
@@ -204,4 +206,3 @@ GRANT SELECT,DELETE ON prodotto TO roberto;
 -- permesso di inserire in scarico
 GRANT INSERT ON scarico TO roberto;
 ```
-
