@@ -39,12 +39,6 @@ WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
 Anna che si occupa della contabilità del social market è spesso interessata a capire l'importo di denaro donato dalle aziende.
 
 ```sql
-
-
-
-
-
-
 SELECT SUM(importo)
 FROM Donazione NATURAL JOIN Donatore 
 WHERE importo is not NULL and cognome is null;
@@ -57,11 +51,11 @@ WHERE importo is not NULL and cognome is null;
 Per la prima query del carico di lavoro scelto,  scegliamo di creare a suo supporto un indice ordinato clusterizzato (secondario) ad albero sull'attributo dataNascita della tabella VOLONTARIO, questo ci permetterà di effettuare una selezione di tipo range sull'attributo in modo più efficiente, lo creiamo clusterizzato perché per il nostro carico di lavoro è necessario creare su volontario un solo indice.
 
 ```sql
-CREATE INDEX idx_ord_dataNascita 
+CREATE INDEX idx_ord_dataNascita_volontario 
 ON Volontario (dataNascita);
 
 CLUSTER Volontario
-USING idx_ord_dataNascita;
+USING idx_ord_dataNascita_volontario;
 ```
 
 #### Query_2
@@ -69,7 +63,11 @@ USING idx_ord_dataNascita;
 Per la seconda query del carico di lavoro scelto, abbiamo scelto di creare a suo supporto un indice ordinato clusterizzato (secondario) ad albero sull'attributo saldo, poiché l'attributo saldo nella query_2 è il fattore booleano e quindi ci permette di selezionare più efficientemente rappresentando una condizione che se false rende falsa la selezione della tupla considerata, nel nostro caso possiamo percorrere l'indice e trovare il punto nel file da cui poi scorrere i blocchi nel senso inverso all'ordinamento, essendo clusterizzato  rendiamo così minimi gli accessi ai blocchi.
 
 ```sql
+CREATE INDEX idx_ord_saldo_carta_cliente
+ON Carta_Cliente (saldo);
 
+CLUSTER Carta_Cliente
+USING idx_ord_saldo_carta_cliente;
 ```
 
 #### Query_3
@@ -108,11 +106,11 @@ Come già accennato durante la scelta del piano fisico, la query che precedentem
 
 #### Query_2
 
-| Prima | Dopo  |
-| ----- | ----- |
-| ![]() | ![]() |
-|       |       |
-|       |       |
+| Prima                                                        | Dopo                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![](piano2A.svg)                                             | ![](piano2B.svg)                                             |
+| Viene utilizzata una scansione sequenziale con filtro la formula booleana coomplessa della query | Viene utilizzata una scansione con indice sull'indice clusterizzato da noi creato su saldo (fattore booloeano della query) di carta_cliente, viene utlizzata una bitmap index scan sulla condizione di saldo in combinazione con una successiva heap index scan che aggiunge il filtro della restante parte della condizione booleana (che è in and) |
+| Execution Time: 0.927 ms                                     | Execution Time: 0.117 ms                                     |
 
 
 

@@ -4,40 +4,48 @@ set search_path to socialMarket;
 -- A:
 
 -- Query_1
+--prima
+EXPLAIN ANALYZE 
+SELECT CF
+FROM Volontario
+WHERE dataNascita > '1997-1-1';
 
-CREATE INDEX idx_ord_dataNascita 
+--creazione piano fisico per query_1
+CREATE INDEX idx_ord_dataNascita_volontario 
 ON Volontario (dataNascita);
 
 CLUSTER Volontario
-USING idx_ord_dataNascita;
+USING idx_ord_dataNascita_volontario;
 
-EXPLAIN ANALYZE SELECT CF
+--dopo
+EXPLAIN ANALYZE 
+SELECT CF
 FROM Volontario
 WHERE dataNascita > '1997-1-1';
 
 
---PRIMA
-"Seq Scan on volontario  (cost=0.00..94.50 rows=502 width=18) (actual time=0.006..0.229 rows=502 loops=1)"
-"  Filter: (datanascita > '1997-01-01'::date)"
-"  Rows Removed by Filter: 2498"
-"Planning Time: 0.033 ms"
-"Execution Time: 0.247 ms"
-
-
---DOPO
-"Bitmap Heap Scan on volontario  (cost=12.17..75.45 rows=502 width=18) (actual time=0.051..0.111 rows=502 loops=1)"
-"  Recheck Cond: (datanascita > '1997-01-01'::date)"
-"  Heap Blocks: exact=10"
-"  ->  Bitmap Index Scan on idx_ord_datanascita  (cost=0.00..12.04 rows=502 width=0) (actual time=0.045..0.045 rows=502 loops=1)"
-"        Index Cond: (datanascita > '1997-01-01'::date)"
-"Planning Time: 0.146 ms"
-"Execution Time: 0.132 ms"
 
 
 -- Query_2
+--prima
+EXPLAIN ANALYZE
 SELECT codCli
 FROM CARTA_CLIENTE
 WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
+
+--creazione piano fisico per query_2
+CREATE INDEX idx_ord_saldo_carta_cliente
+ON Carta_Cliente (saldo);
+
+CLUSTER Carta_Cliente
+USING idx_ord_saldo_carta_cliente;
+
+--dopo
+EXPLAIN ANALYZE
+SELECT codCli
+FROM CARTA_CLIENTE
+WHERE saldo < 5  and (età_16 >= 2 or età_64 >= 2);
+
 
 
 
@@ -59,7 +67,7 @@ USING idx_ord_donatore_cognome;
 
 SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
 FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 'donazione' , 'donatore');
+WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente');
 
 
 
