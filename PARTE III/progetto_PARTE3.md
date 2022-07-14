@@ -102,9 +102,23 @@ WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 
 | Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' | Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
 | Execution Time: 1.031 ms                                     | Execution Time: 0.196 ms                                     |
 
+**Commento:**
+
+Come già accennato durante la scelta del piano fisico, la query che precedentemente viene eseguita con una banale scansione sequenziale può ora essere eseguita ottimizzando nettamente il tempo di esecuzione utilizzando un accesso con l'indice clusterizzato (porta all'accesso dei minori blocchi possibili) sulla dataNascita in volontario.
+
+#### Query_2
+
+| Prima | Dopo  |
+| ----- | ----- |
+| ![]() | ![]() |
+|       |       |
+|       |       |
 
 
-## **Descrizione transazione (10)**
+
+
+
+## *Descrizione transazione (10)**
 
 Un' ente vuole rinnovare l'autorizzazione per un determinato titolare *cliente* , e conosce il suo indirizzo, *indirizzoEnte*,  e il suo nome *indirizzoNome* ( che sono chiave univoca in ente), la transazione che implementa questa operazione deve effettuare:
 
