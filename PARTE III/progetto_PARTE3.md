@@ -92,29 +92,28 @@ USING idx_ord_dataOra_Donazione;
 ### Dimensioni tabelle coinvolte (c)
 
 ```sql
-SELECT codUnità
-FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
-JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
-WHERE nCasse < 3 and Donazione.dataOra > '2022-06-01';
+SELECT relname, relpages as numeropagine, reltuples as numeroTuple 
+FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
+WHERE N.nspname = 'socialmarket' AND relname IN ('volontario', 'carta_cliente', 'trasporto', 'donazione', 'prodotto');
 ```
-| relazione     | numeropagine | numerotuple |
+| relname       | numeropagine | numerotuple |
 | ------------- | ------------ | ----------- |
 | carta_cliente | 42           | 5000        |
 | volontario    | 94           | 5000        |
-| trasporto     | 44           | 4000        |
-| donazione     | 46           | 5832        |
-| prodotto      | 42           | 7627        |
+| trasporto     | 66           | 6000        |
+| donazione     | 64           | 8166        |
+| prodotto      | 59           | 10634       |
 
 
 ### Descrizione piani di esecuzione (d)
 
 #### Query_1
 
-| Prima                                                                                         | Dopo                                                                                                                                                                               |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ![](piano1A.svg)                                                                              | ![](piano1B.svg)                                                                                                                                                                   |
+| Prima                                                        | Dopo                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![](piano1A.svg)                                             | ![](piano1B.svg)                                             |
 | Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' | Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
-| Execution Time: 1.031 ms                                                                      | Execution Time: 0.196 ms                                                                                                                                                           |
+| Execution Time: 0.681 ms                                     | Execution Time: 0.144 ms                                     |
 
 **Commento:**
 
@@ -122,11 +121,11 @@ Come già accennato durante la scelta del piano fisico, la query che precedentem
 
 #### Query_2
 
-| Prima                                                                                            | Dopo                                                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ![](piano2A.svg)                                                                                 | ![](piano2B.svg)                                                                                                                                                                                                                                                                                                                                     |
+| Prima                                                        | Dopo                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ![](piano2A.svg)                                             | ![](piano2B.svg)                                             |
 | Viene utilizzata una scansione sequenziale con filtro la formula booleana coomplessa della query | Viene utilizzata una scansione con indice sull'indice clusterizzato da noi creato su saldo (fattore booloeano della query) di carta_cliente, viene utlizzata una bitmap index scan sulla condizione di saldo in combinazione con una successiva heap index scan che aggiunge il filtro della restante parte della condizione booleana (che è in and) |
-| Execution Time: 0.927 ms                                                                         | Execution Time: 0.117 ms                                                                                                                                                                                                                                                                                                                             |
+| Execution Time: 0.429 ms                                     | Execution Time: 0.076 ms                                     |
 
 **Commento:**
 
@@ -146,7 +145,7 @@ Avendo creato un indice su il fattore booleano della query (saldo) il sistema ut
 
 
 
-## *Descrizione transazione (10)**
+## **Descrizione transazione (10)**
 
 Un' ente vuole rinnovare l'autorizzazione per un determinato titolare *cliente* , e conosce il suo indirizzo, *indirizzoEnte*,  e il suo nome *indirizzoNome* ( che sono chiave univoca in ente), la transazione che implementa questa operazione deve effettuare:
 

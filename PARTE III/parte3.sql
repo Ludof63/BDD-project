@@ -1,6 +1,5 @@
 set search_path to socialMarket;
 
-
 -- A:
 
 -- Query_1
@@ -55,7 +54,7 @@ EXPLAIN ANALYZE
 SELECT codUnità
 FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
 JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
-WHERE nCasse < 3 and Donazione.dataOra > '2022-06-01';
+WHERE nCasse < 3 and (Donazione.dataOra BETWEEN'2022-05-01' AND  '2022-06-01');
 
 --creazione piano fisico per query_3
 CREATE INDEX idx_ord_ncasse_trasporto
@@ -75,7 +74,16 @@ EXPLAIN ANALYZE
 SELECT codUnità
 FROM Prodotto JOIN Donazione ON Prodotto.codDonazione = Donazione.codDonazione
 JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
-WHERE nCasse < 3 and Donazione.dataOra > '2022-06-01';
+WHERE nCasse < 3 and (Donazione.dataOra BETWEEN'2022-05-01' AND  '2022-06-01');
+
+
+
+
+
+SELECT relname, relpages as numeropagine, reltuples as numeroTuple 
+FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
+WHERE N.nspname = 'socialmarket' AND relname IN ('volontario', 'carta_cliente', 'trasporto', 'donazione', 'prodotto');
+
 
 
 
