@@ -111,7 +111,7 @@ WHERE N.nspname = 'socialmarket' AND relname IN ('volontario', 'carta_cliente', 
 
 | Prima                                                        |
 | ------------------------------------------------------------ |
-| ![](piano1A.svg)                                             |
+| ![](.piano1A.svg)                                            |
 | Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' |
 | Execution Time: 0.681 ms                                     |
 
@@ -119,7 +119,7 @@ WHERE N.nspname = 'socialmarket' AND relname IN ('volontario', 'carta_cliente', 
 
 | Dopo                                                         |
 | ------------------------------------------------------------ |
-| ![](piano1B.svg)                                             |
+| ![](.piano1B.svg)                                            |
 | Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
 | Execution Time: 0.144 ms                                     |
 
@@ -139,7 +139,7 @@ Come già accennato durante la scelta del piano fisico, la query che precedentem
 
 | Prima                                                        |
 | :----------------------------------------------------------- |
-| ![](piano2A.svg)                                             |
+| ![](.piano2A.svg)                                            |
 | Viene utilizzata una scansione sequenziale con filtro la formula booleana coomplessa della query |
 | Execution Time: 0.429 ms                                     |
 
@@ -147,7 +147,7 @@ Come già accennato durante la scelta del piano fisico, la query che precedentem
 
 | Dopo                                                         |
 | ------------------------------------------------------------ |
-| ![](piano2B.svg)                                             |
+| ![](.piano2B.svg)                                            |
 | Viene utilizzata una scansione con indice sull'indice clusterizzato da noi creato su saldo (fattore booloeano della query) di carta_cliente, viene utlizzata una bitmap index scan sulla condizione di saldo in combinazione con una successiva heap index scan che aggiunge il filtro della restante parte della condizione booleana (che è in and) |
 | Execution Time: 0.076 ms                                     |
 
@@ -161,7 +161,7 @@ Avendo creato un indice su il fattore booleano della query (saldo) il sistema ut
 
 | Prima                                                        |
 | ------------------------------------------------------------ |
-| ![](piano3A.svg)                                             |
+| ![](.piano3A.svg)                                            |
 | Viene utilizzata una combinazione di due hash join  in cui l'accesso a tutte e tre le relazioni di base è attraverso una scansione sequenziale e la successiva applicazione di una funzione di hash per implementare l'operatore di join |
 | Execution Time: 2.105 ms                                     |
 
@@ -169,7 +169,7 @@ Avendo creato un indice su il fattore booleano della query (saldo) il sistema ut
 
 | Dopo                                                         |
 | ------------------------------------------------------------ |
-| ![](piano3B.svg)                                             |
+| ![](.piano3B.svg)                                            |
 | Vengono utilizzati due hash join concatenati come nel caso precedente, in questo caso in ordine modificato, ma questa volta si riesce ad ottimizzare l'accesso alle relazioni di base trasporto e donazione utilizzando gli indici clusterizzati definiti da noi nel piano fisico, si utilizza una scansione con indice basata sulla combinazione di una bitmap index scan + bitmap heap scan, mentre per la tabella prodotto si accede sequenzialmente (per hash join). |
 | Execution Time: 1.654 ms                                     |
 
