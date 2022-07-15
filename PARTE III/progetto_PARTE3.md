@@ -109,39 +109,73 @@ WHERE N.nspname = 'socialmarket' AND relname IN ('volontario', 'carta_cliente', 
 
 #### Query_1
 
-| Prima                                                        | Dopo                                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](piano1A.svg)                                             | ![](piano1B.svg)                                             |
-| Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' | Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
-| Execution Time: 0.681 ms                                     | Execution Time: 0.144 ms                                     |
+| Prima                                                        |
+| ------------------------------------------------------------ |
+| ![](piano1A.svg)                                             |
+| Viene utilizzato una scansione sequenziale di volontario con filtro dataNascita >'1997-01-01' |
+| Execution Time: 0.681 ms                                     |
+
+
+
+| Dopo                                                         |
+| ------------------------------------------------------------ |
+| ![](piano1B.svg)                                             |
+| Viene utilizza una scansione con indice in particolare la combinazione di bitmap + heap scan utilizzando l'indice da noi creato su volontario con filtro dataNascita >'1997-01-01' |
+| Execution Time: 0.144 ms                                     |
 
 **Commento:**
 
 Come già accennato durante la scelta del piano fisico, la query che precedentemente viene eseguita con una banale scansione sequenziale può ora essere eseguita ottimizzando nettamente il tempo di esecuzione utilizzando un accesso con l'indice clusterizzato (porta all'accesso dei minori blocchi possibili) sulla dataNascita in volontario.
 
+
+
+
+
+
+
+
+
 #### Query_2
 
-| Prima                                                        | Dopo                                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](piano2A.svg)                                             | ![](piano2B.svg)                                             |
-| Viene utilizzata una scansione sequenziale con filtro la formula booleana coomplessa della query | Viene utilizzata una scansione con indice sull'indice clusterizzato da noi creato su saldo (fattore booloeano della query) di carta_cliente, viene utlizzata una bitmap index scan sulla condizione di saldo in combinazione con una successiva heap index scan che aggiunge il filtro della restante parte della condizione booleana (che è in and) |
-| Execution Time: 0.429 ms                                     | Execution Time: 0.076 ms                                     |
+| Prima                                                        |
+| :----------------------------------------------------------- |
+| ![](piano2A.svg)                                             |
+| Viene utilizzata una scansione sequenziale con filtro la formula booleana coomplessa della query |
+| Execution Time: 0.429 ms                                     |
+
+
+
+| Dopo                                                         |
+| ------------------------------------------------------------ |
+| ![](piano2B.svg)                                             |
+| Viene utilizzata una scansione con indice sull'indice clusterizzato da noi creato su saldo (fattore booloeano della query) di carta_cliente, viene utlizzata una bitmap index scan sulla condizione di saldo in combinazione con una successiva heap index scan che aggiunge il filtro della restante parte della condizione booleana (che è in and) |
+| Execution Time: 0.076 ms                                     |
 
 **Commento:**
 
 Avendo creato un indice su il fattore booleano della query (saldo) il sistema utilizza una scansione con indice su di esso applicando poi successivamente il filtro per implementare la seconda parte della condizione booleana  in and, impiegando un tempo decisamente inferiore alla scansione sequenziale con filtro iniziale
 
+
+
 #### Query_3
 
-| Prima | Dopo  |
-| ----- | ----- |
-| ![]() | ![]() |
-|       |       |
-|       |       |
+| Prima                                                        |
+| ------------------------------------------------------------ |
+| ![](piano3A.svg)                                             |
+| Viene utilizzata una combinazione di due hash join  in cui l'accesso a tutte e tre le relazioni di base è attraverso una scansione sequenziale e la successiva applicazione di una funzione di hash per implementare l'operatore di join |
+| Execution Time: 2.105 ms                                     |
+
+
+
+| Dopo                                                         |
+| ------------------------------------------------------------ |
+| ![](piano3B.svg)                                             |
+| Vengono utilizzati due hash join concatenati come nel caso precedente, in questo caso in ordine modificato, ma questa volta si riesce ad ottimizzare l'accesso alle relazioni di base trasporto e donazione utilizzando gli indici clusterizzati definiti da noi nel piano fisico, si utilizza una scansione con indice basata sulla combinazione di una bitmap index scan + bitmap heap scan, mentre per la tabella prodotto si accede sequenzialmente (per hash join). |
+| Execution Time: 1.654 ms                                     |
 
 **Commento:**
 
-
+Grazie agli indici clusterizzati da noi creati si riesce ad ottimizzare l'accesso alle relazioni coinvolte nel join su cui è presente una condizione ulteriore, in particolare non siamo riusciti a migliorare le prestazioni del join, anche provando a far scegliere al sistema il merge join per almeno uno dei due join poiché crediamo il sistema reputi più efficiente l'hash join
 
 
 
@@ -161,9 +195,10 @@ BEGIN TRANSACTION;
 DO $$
 DECLARE  enteCod int;
 DECLARE  cliCod  int;
-DECLARE  nomeEnte varchar := 'Nibali, Ginese e Trupiano SPA'; 
-DECLARE  indirizzoEnte varchar := 'Incrocio Fabrizia, 99 Piano 8 42024, Castelnovo Di Sotto (RE)';
-DECLARE cliente char(17) := 'PJBBKX81R05M263F ';
+DECLARE  nomeEnte varchar := 'Seddio, Chindamo e Tognazzi Group'; 
+DECLARE  indirizzoEnte varchar := 'Incrocio Antonini, 11 Appartamento 36
+10054, Bousson (TO)';
+DECLARE cliente char(17) := 'PAOEEP25H45L924Z';
 BEGIN
         SELECT E.codEnte INTO enteCod
         FROM Ente E
@@ -203,8 +238,6 @@ GRANT USAGE ON SCHEMA socialmarket TO Alice WITH GRANT OPTION;
 GRANT ALL PRIVILEGES ON SCHEMA socialmarket to Alice WITH GRANT OPTION;
 ```
 
-
-
 #### Roberto
 
 Roberto è un *volontario del social market*,  e ha il permesso di visualizzare tutti i suoi turni e le attività da lui svolte, ma non può inserirle lui, pensiamo sia infatti compito dell'organizzazione preparare i turni. 
@@ -239,7 +272,7 @@ SELECT *
 FROM ricezione
 WHERE codRiceve = (SELECT codRiceve FROM turniCF);
 
-GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurniCF TO roberto;
+GRANT SELECT ON turniCF,appuntamentoCF,trasportoCF,ricezioneCF TO roberto;
 
 -- permesso di leggere e modificare su prodotto
 GRANT SELECT,DELETE ON prodotto TO roberto;

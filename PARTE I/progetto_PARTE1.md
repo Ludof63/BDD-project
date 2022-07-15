@@ -79,7 +79,16 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 - nomeProdotto
 
 #### Domini attributi
-
+<style>table th:first-of-type {
+    width: 20%;
+}
+table th:nth-of-type(2) {
+    width: 20%;
+}
+table th:nth-of-type(3) {
+    width: 60%;
+}
+</style>
 **ENTE:**
 
 | Attributo | Dominio |
@@ -103,6 +112,10 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | saldo     | int (positivo)                                   |
 | fasceEtà  | int (positivo) x int (positivo) x int (positivo) |
 
+
+
+
+
 **FAMILIARE:**
 
 | Attributo    | Dominio               |
@@ -117,18 +130,18 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 **VOLONTARIO**:
 
-| Attributo     | Dominio                                                      |
-| :------------ | :----------------------------------------------------------- |
-| CF            | string (16 caratteri)                                        |
-| luogoNascita  | string                                                       |
-| cognome       | string                                                       |
-| nome          | string                                                       |
-| dataNascita   | date                                                         |
-| telefono      | string                                                       |
-| sesso         | {'M','F','Others'}                                           |
-| tipiServizio  | string                                                       |
+| Attributo     | Dominio                                                                                  |
+| :------------ | :--------------------------------------------------------------------------------------- |
+| CF            | string (16 caratteri)                                                                    |
+| luogoNascita  | string                                                                                   |
+| cognome       | string                                                                                   |
+| nome          | string                                                                                   |
+| dataNascita   | date                                                                                     |
+| telefono      | string                                                                                   |
+| sesso         | {'M','F','Others'}                                                                       |
+| tipiServizio  | string                                                                                   |
 | disponibilità | {'Lunedì', 'Martedì', 'Mercoledì','Giovedì','Venerdì','Sabato','Domenica'} x time x time |
-| tipoVeicolo   | string                                                       |
+| tipoVeicolo   | string                                                                                   |
 
 **TURNO:**
 
@@ -201,6 +214,10 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 | :-------- | :-------------- |
 | importo   | real (positivo) |
 
+
+
+
+
 **SCARICO**:
 
 | Attributo   | Dominio            |
@@ -230,34 +247,35 @@ Gli identificatori primari sono deducibili dallo schema indichiamo per le entit�
 
 ### Vincoli non esprimibili nel diagramma (c)
 
-| Nome Vincolo | Entità - associazioni coinvolte                              | Vincolo                                                      |
-| ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| V1           | autorizza - CARTA_CLIENTE                                    | due autorizzazioni per la stessa carta_cliente devono avere *dataInizio* distanti almeno di 6 mesi |
-| V2           | prende  - FAMILIARE                                          | un familiare può prendere appuntamento solo se la sua età è maggiore di 16 anni |
-| V3           | FAMILIARE- titolare- nel_nucleo - CARTA_CLIENTE              | Il familiare in relazione titolare con un carta_cliente deve essere in relazione con la stessa carta_cliente attraverso la relazione nel_nucleo |
-| V4           | APPUNTAMENTO                                                 | gli appuntamenti devono essere scaglionati di 20 minuti, di conseguenza non possono esserci due appuntamenti con la differenza minore di 20 minuti tra i rispettivi inizi (dataOra) |
-| V5           | APPUNTAMENTO                                                 | *saldoFine* <= *saldoInizio*                                 |
-| V6           | TURNO                                                        | *turnoInizio <= turnoFine*                                   |
-| V7           | TURNO - riceve - RICEZIONE                                   | Un turno (volontario in uno slot temporale) in associazione riceve con ricezione deve avere *riceveInizio >= turnoInizio and riceveFine <= turnoFine* |
-| V8           | TURNO - trasporta - TRASPORTO                                | Un turno in associazione trasporta con trasporto deve avere *trasportoInizio >= turnoInizio and riceveFine <= trasportoFine* |
-| V9           | TURNO - supervisiona - APPUNTAMENTO                          | Un turno in associazione supervisiona con appuntamento deve avere *dataOra >= turnoInizio and dataOra <= trasportoFine* |
-| V10          | TURNO - riceve - supervisiona - trasporta - TRASPORTO - APPUNTAMENTO - RICEZIONE | Per un turno non ci devono essere attività (svolte da volontario interessato) contemporanee ovvero sovrapposte temporalemente |
-| V11          | RICEZIONE                                                    | *riceveInizio <= riceveFine*                                 |
-| V12          | TRASPORTO                                                    | *trasportoInizio <= trasportoFine*                           |
-| V13          | CARTA_CLIENTE - nel_nucleo - FAMILIARE                       | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in fasce d'età |
-| V14          | DENARO - SPESA                                               | la somma degli importi in *SPESA* è minore uguale alla somma degli importi di *DENARO* |
-| V15          | MERCE                                                        | una  merce che è stata donata non può essere stata comprata e viceversa, quindi una merce può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
-| V16          | MERCE - include - TRASPORTO                                  | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
-| V17          | RICEZIONE - riceve_trasporto - TRASPORTO                     | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInizio <= riceveInizio |
-| V18          | PRODOTTO - INVENTARIO - di_tipo  - acquista - APPUNTAMENTO   | La quantità di un prodotto p in inventario deve essere il numero di unità (in prodotto) in relazione di_tipo con p non acquistati |
-| V19          | CARTA_CLIENTE - autorizza - APPUNTAMENTO - riferita          | Il saldo a current_date in CARTA_CLIENTE deve corrispondere alla differenza tra PuntiMensili dell'autorizzazione della CARTA_CLIENTE e la somma delle differenze tra saldoInizio  e saldoFine degli appuntamenti in relazione riferita con la CARTA_CLIENTE, in particolare dovrà essere uguale al saldoFine dell'appuntamento in relazione con la CARTA_CLIENTE per cui la data è la più vicina a current_date |
+
+| Nome Vincolo | Entità - associazioni coinvolte                                                  | Vincolo                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| V1           | autorizza - CARTA_CLIENTE                                                        | due autorizzazioni per la stessa carta_cliente devono avere *dataInizio* distanti almeno di 6 mesi                                                                                                                                                                                                                                                                                                              |
+| V2           | prende  - FAMILIARE                                                              | un familiare può prendere appuntamento solo se la sua età è maggiore di 16 anni                                                                                                                                                                                                                                                                                                                                 |
+| V3           | FAMILIARE- titolare- nel_nucleo - CARTA_CLIENTE                                  | Il familiare in relazione titolare con un carta_cliente deve essere in relazione con la stessa carta_cliente attraverso la relazione nel_nucleo                                                                                                                                                                                                                                                                 |
+| V4           | APPUNTAMENTO                                                                     | gli appuntamenti devono essere scaglionati di 20 minuti, di conseguenza non possono esserci due appuntamenti con la differenza minore di 20 minuti tra i rispettivi inizi (dataOra)                                                                                                                                                                                                                             |
+| V5           | APPUNTAMENTO                                                                     | *saldoFine* <= *saldoInizio*                                                                                                                                                                                                                                                                                                                                                                                    |
+| V6           | TURNO                                                                            | *turnoInizio <= turnoFine*                                                                                                                                                                                                                                                                                                                                                                                      |
+| V7           | TURNO - riceve - RICEZIONE                                                       | Un turno (volontario in uno slot temporale) in associazione riceve con ricezione deve avere *riceveInizio >= turnoInizio and riceveFine <= turnoFine*                                                                                                                                                                                                                                                           |
+| V8           | TURNO - trasporta - TRASPORTO                                                    | Un turno in associazione trasporta con trasporto deve avere *trasportoInizio >= turnoInizio and riceveFine <= trasportoFine*                                                                                                                                                                                                                                                                                    |
+| V9           | TURNO - supervisiona - APPUNTAMENTO                                              | Un turno in associazione supervisiona con appuntamento deve avere *dataOra >= turnoInizio and dataOra <= trasportoFine*                                                                                                                                                                                                                                                                                         |
+| V10          | TURNO - riceve - supervisiona - trasporta - TRASPORTO - APPUNTAMENTO - RICEZIONE | Per un turno non ci devono essere attività (svolte da volontario interessato) contemporanee ovvero sovrapposte temporalemente                                                                                                                                                                                                                                                                                   |
+| V11          | RICEZIONE                                                                        | *riceveInizio <= riceveFine*                                                                                                                                                                                                                                                                                                                                                                                    |
+| V12          | TRASPORTO                                                                        | *trasportoInizio <= trasportoFine*                                                                                                                                                                                                                                                                                                                                                                              |
+| V13          | CARTA_CLIENTE - nel_nucleo - FAMILIARE                                           | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in fasce d'età                                                                                                                                                                                                                                                               |
+| V14          | DENARO - SPESA                                                                   | la somma degli importi in *SPESA* è minore uguale alla somma degli importi di *DENARO*                                                                                                                                                                                                                                                                                                                          |
+| V15          | MERCE                                                                            | una  merce che è stata donata non può essere stata comprata e viceversa, quindi una merce può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*)                                                                                                                                                                                                                                              |
+| V16          | MERCE - include - TRASPORTO                                                      | una merce in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio*                                                                                                                                                                                                                                                                                                                    |
+| V17          | RICEZIONE - riceve_trasporto - TRASPORTO                                         | un trasporto in relazione riceve_trasporto con una ricezione deve soddisfare trasportoInizio <= riceveInizio                                                                                                                                                                                                                                                                                                    |
+| V18          | PRODOTTO - INVENTARIO - di_tipo  - acquista - APPUNTAMENTO                       | La quantità di un prodotto p in inventario deve essere il numero di unità (in prodotto) in relazione di_tipo con p non acquistati                                                                                                                                                                                                                                                                               |
+| V19          | CARTA_CLIENTE - autorizza - APPUNTAMENTO - riferita                              | Il saldo a current_date in CARTA_CLIENTE deve corrispondere alla differenza tra PuntiMensili dell'autorizzazione della CARTA_CLIENTE e la somma delle differenze tra saldoInizio  e saldoFine degli appuntamenti in relazione riferita con la CARTA_CLIENTE, in particolare dovrà essere uguale al saldoFine dell'appuntamento in relazione con la CARTA_CLIENTE per cui la data è la più vicina a current_date |
 
 ### Gerarchie (d)
 
-| Gerarchia | Descrizione                                                  | Specifica             |
-| --------- | ------------------------------------------------------------ | --------------------- |
+| Gerarchia | Descrizione                                                                                                     | Specifica             |
+| --------- | --------------------------------------------------------------------------------------------------------------- | --------------------- |
 | DONAZIONE | una donazione può essere specializzata in MERCE o DENARO a seconda che sia rispettivamente in prodotti o denaro | *totale ed esclusiva* |
-| DONATORE  | un donatore può essere specializzato un PRIVATO o  un' AZIENDA | *totale ed esclusiva* |
+| DONATORE  | un donatore può essere specializzato un PRIVATO o  un' AZIENDA                                                  | *totale ed esclusiva* |
 
 ## **Progetto logico (3)**
 
@@ -316,14 +334,14 @@ Riportiamo solo le tabelle dei domini di relazioni di cui abbiamo modificato att
 
 Riportiamo tabella con sole aggiunte e modifiche di vicoli dovute a ristrutturazione 
 
-| Nome Vincolo | Entità - associazioni coinvolte        | Vincolo                                                      |
-| ------------ | -------------------------------------- | ------------------------------------------------------------ |
-| V13          | CARTA_CLIENTE - nel_nucleo - FAMILIARE | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in età_<16, età_ 16-64, età_>64 |
+| Nome Vincolo | Entità - associazioni coinvolte        | Vincolo                                                                                                                                                                 |
+| ------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| V13          | CARTA_CLIENTE - nel_nucleo - FAMILIARE | Il numero di membri per fasce d'età dei familiari in relazione con una CARTA_CLIENTE deve coincidere con i  numeri per fasce d'età in età_<16, età_ 16-64, età_>64      |
 | V15          | DONAZIONE                              | una  donazione che è stata donata non può essere stata comprata e viceversa, quindi una donata può essere o in relazione con *donatore*(*dona*) o con *spesa*(*compra*) |
-| V16          | DONAZIONE- include - TRASPORTO         | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio* |
-| V20          | DONAZIONE - compra - dona              | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa |
-| V21          | DONAZIONE                              | una donazione in denaro non può essere trasportata           |
-| V22          | TURNO                                  | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique) |
+| V16          | DONAZIONE- include - TRASPORTO         | una donazione in relazione include con un trasporto deve soddisfare *dataOra <= trasportoInizio*                                                                        |
+| V20          | DONAZIONE - compra - dona              | Se una donazione è in relazione con compra non può essere in relazione con dona e viceversa                                                                             |
+| V21          | DONAZIONE                              | una donazione in denaro non può essere trasportata                                                                                                                      |
+| V22          | TURNO                                  | Non ci possono essere turni con lo stesso dataOra (dataOra  è unique)                                                                                                   |
 
 
 

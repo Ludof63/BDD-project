@@ -77,17 +77,6 @@ JOIN Trasporto ON Donazione.codTrasporto = Trasporto.codTrasporto
 WHERE nCasse < 3 and (Donazione.dataOra BETWEEN'2022-05-01' AND  '2022-06-01');
 
 
-
-
-
-SELECT relname, relpages as numeropagine, reltuples as numeroTuple 
-FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE N.nspname = 'socialmarket' AND relname IN ('volontario', 'carta_cliente', 'trasporto', 'donazione', 'prodotto');
-
-
-
-
-
 -- B: transazione
 -- utilizzare auto rollback on error
 -- i valori nelle variabili sono per test
@@ -95,9 +84,10 @@ BEGIN TRANSACTION;
 DO $$
 DECLARE  enteCod int;
 DECLARE  cliCod  int;
-DECLARE  nomeEnte varchar := 'Nibali, Ginese e Trupiano SPA'; 
-DECLARE  indirizzoEnte varchar := 'Incrocio Fabrizia, 99 Piano 8 42024, Castelnovo Di Sotto (RE)';
-DECLARE cliente char(17) := 'PJBBKX81R05M263F ';
+DECLARE  nomeEnte varchar := 'Seddio, Chindamo e Tognazzi Group'; 
+DECLARE  indirizzoEnte varchar := 'Incrocio Antonini, 11 Appartamento 36
+10054, Bousson (TO)';
+DECLARE cliente char(17) := 'PAOEEP25H45L924Z';
 BEGIN
         SELECT E.codEnte INTO enteCod
         FROM Ente E
@@ -115,8 +105,10 @@ COMMIT;
 
 
 
--- C: controllo dell'accesso
 
+
+
+-- C: controllo dell'accesso
 --ALICE gestore del social market
 CREATE USER Alice password 'Alice';
 GRANT USAGE ON SCHEMA socialmarket TO Alice WITH GRANT OPTION;
@@ -151,24 +143,10 @@ SELECT *
 FROM ricezione
 WHERE codRiceve = (SELECT codRiceve FROM turniCF);
 
-GRANT SELECT ON turniCF,appuntamentoByTurniCF,trasportoByTurniCF,ricezioneByTurniCF TO roberto;
+GRANT SELECT ON turniCF,appuntamentoCF,trasportoCF,ricezioneCF TO roberto;
 
 -- permesso di leggere e modificare su prodotto
 GRANT SELECT,DELETE ON prodotto TO roberto;
 
 -- permesso di inserire in scarico
 GRANT INSERT ON scarico TO roberto;
-
-
-
-
-
-
-SELECT C.relname as relazione, C.relpages as numeroPagine, C.reltuples as numeroTuple
-FROM pg_namespace N JOIN pg_class C ON N.oid = C.relnamespace
-WHERE  N.nspname = 'socialmarket' AND relname IN ('volontario','carta_cliente', 'donazione' , 'donatore');
-
-
-
-
-
